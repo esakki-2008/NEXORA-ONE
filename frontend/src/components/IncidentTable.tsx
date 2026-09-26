@@ -1,28 +1,26 @@
 import { Link } from "react-router-dom";
 
-import { SeverityBadge, StatusBadge } from "./StatusBadge";
+import { formatDuration, formatShortTime, humanize } from "../lib/format";
 import type { Incident } from "../types";
+import { SeverityBadge, StatusBadge } from "./StatusBadge";
 
-function formatTime(value: string): string {
-  return new Intl.DateTimeFormat(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit"
-  }).format(new Date(value));
+interface IncidentTableProps {
+  incidents: Incident[];
+  compact?: boolean;
 }
 
-export function IncidentTable({ incidents }: { incidents: Incident[] }) {
+export function IncidentTable({ incidents, compact = false }: IncidentTableProps) {
   return (
     <div className="table-wrap">
-      <table className="data-table">
+      <table className="data-table incident-table">
         <thead>
           <tr>
             <th>Incident</th>
             <th>Service</th>
             <th>Severity</th>
             <th>Status</th>
-            <th>Received</th>
+            {!compact ? <th>AI stage</th> : null}
+            <th>{compact ? "Received" : "Duration"}</th>
           </tr>
         </thead>
         <tbody>
@@ -36,8 +34,9 @@ export function IncidentTable({ incidents }: { incidents: Incident[] }) {
               </td>
               <td>{incident.service}</td>
               <td><SeverityBadge severity={incident.severity} /></td>
-              <td><StatusBadge value={incident.status} /></td>
-              <td className="muted">{formatTime(incident.created_at)}</td>
+              <td><StatusBadge value={incident.status} dot /></td>
+              {!compact ? <td><span className="stage-text">{humanize(incident.agent_state)}</span></td> : null}
+              <td className="muted">{compact ? formatShortTime(incident.created_at) : formatDuration(incident.created_at)}</td>
             </tr>
           ))}
         </tbody>

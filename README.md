@@ -4,7 +4,7 @@
 
 NEXORA ONE is an autonomous enterprise operations AI platform foundation for the Nebius × NVIDIA Global AI Hackathon 2026, Best Apps & Agents track. It is designed for companies whose operational truth is distributed across applications, payments, databases, cloud infrastructure, support, supply chain, deployments, and compliance systems.
 
-Phase 1 establishes the boundaries needed to observe, investigate, understand, correlate, prioritize, plan, request approval, act, verify, and report without pretending that later capabilities already exist.
+Phase 1 establishes the boundaries needed to observe, investigate, understand, correlate, prioritize, plan, request approval, act, verify, and report without pretending that later capabilities already exist. Phase 2 builds the enterprise command center on those boundaries, connecting operational screens to real API and simulator data.
 
 ## Problem
 
@@ -20,7 +20,7 @@ OBSERVE → INVESTIGATE → UNDERSTAND → CORRELATE → PRIORITIZE
 PLAN → REQUEST APPROVAL → ACT → VERIFY → REPORT
 ```
 
-Phase 1 provides the contracts and runnable shell for that flow. It intentionally does **not** run an autonomous investigation, call an AI provider, or execute remediation.
+Phase 1 provides the contracts and runnable shell for that flow. Phase 2 provides the functional enterprise command center and connected read surfaces. The product still intentionally does **not** run an autonomous investigation, call an AI provider, or execute remediation.
 
 ## Why it matters
 
@@ -124,23 +124,22 @@ The simulator contains structured services, deployments, configurations, metrics
 
 ## Current phase
 
-**Phase 1 — Foundation & Architecture**
+**Phase 2 — Enterprise Command Center**
 
-Implemented now:
+Phase 1 remains intact and Phase 2 adds:
 
-- runnable FastAPI application and health endpoint;
-- validated incident create/list/get API;
-- activity, evidence, hypothesis, and honest report read surfaces;
-- domain models for the core operations records;
-- reusable agent state machine with terminal human-handoff states;
-- provider-neutral AI contracts with Nebius/Nemotron integration intentionally deferred;
-- controlled tool definitions and registry boundary;
-- verification contract;
-- structured ShopFlow simulator;
-- React/Vite/Tailwind application shell with routing, API service layer, loading/error states, and live API health status;
-- backend and frontend tests.
+- premium enterprise command center with real incident and simulator source boundaries;
+- grouped responsive navigation for monitoring, intelligence, action, reporting, and system surfaces;
+- command center overview with API-backed active incidents, critical issue counts, observable activity, and simulator coverage;
+- business health and operations views that distinguish no active records from not-configured domains;
+- incident detail with impact context, lifecycle state visualization, evidence/hypothesis counts, and audit activity;
+- evidence explorer with recorded-vs-simulator labels, search, and client-side filtering;
+- investigation queue/detail surfaces that show structured evidence and hypotheses without exposing private model reasoning;
+- honest agent directory, verification, reports, history, remediation boundary, and settings surfaces;
+- loading skeletons, retryable errors, source-aware empty states, accessible controls, and responsive desktop/tablet/mobile behavior;
+- frontend route coverage tests and production build verification.
 
-Not implemented in Phase 1: autonomous investigation, specialist agents, real model calls, remediation execution, approval workflows, verification execution, fake metrics, or fabricated agent activity.
+Still intentionally not implemented: autonomous investigation, specialist agent execution, real model calls, remediation execution, approval workflows, verification execution, fake metrics, fabricated AI activity, or production authentication.
 
 ## Ten-phase roadmap
 
@@ -213,8 +212,10 @@ Never commit `.env` or credentials.
 | `GET` | `/api/incidents/{id}/evidence` | Retrieve evidence (empty until added by a future service) |
 | `GET` | `/api/incidents/{id}/hypotheses` | Retrieve hypotheses (empty until added by a future service) |
 | `GET` | `/api/incidents/{id}/report` | Retrieve a generated report; returns 404 when none exists |
+| `GET` | `/api/simulator/scenarios` | List structured ShopFlow scenario fixtures |
+| `GET` | `/api/simulator/scenarios/{scenario_id}` | Retrieve one read-only ShopFlow fixture |
 
-Future endpoints such as investigate, approve, execute, and verify are deliberately not registered yet.
+The Phase 2 frontend uses these existing read surfaces. Future endpoints such as investigate, approve, execute, and verify are deliberately not registered yet.
 
 ## Testing and checks
 

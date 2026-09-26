@@ -1,42 +1,93 @@
-import { useEffect, useState } from "react";
-import { NavLink, Outlet } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 
 import { getHealth } from "../api/health";
-import { StatusBadge } from "./StatusBadge";
+import { listIncidents } from "../api/incidents";
 import type { HealthResponse } from "../types";
+import { Icon, type IconName } from "./Icon";
+import { StatusBadge } from "./StatusBadge";
 
 interface NavItem {
   label: string;
   path: string;
-  code: string;
+  icon: IconName;
 }
 
-const navItems: NavItem[] = [
-  { label: "Command Center", path: "/command-center", code: "CC" },
-  { label: "Incidents", path: "/incidents", code: "IN" },
-  { label: "Investigation", path: "/investigation", code: "IV" },
-  { label: "Evidence", path: "/evidence", code: "EV" },
-  { label: "Agents", path: "/agents", code: "AG" },
-  { label: "Operations", path: "/operations", code: "OP" },
-  { label: "Verification", path: "/verification", code: "VR" },
-  { label: "Reports", path: "/reports", code: "RP" },
-  { label: "Settings", path: "/settings", code: "ST" }
+interface NavGroup {
+  label: string;
+  items: NavItem[];
+}
+
+const navGroups: NavGroup[] = [
+  {
+    label: "MONITOR",
+    items: [
+      { label: "Incidents", path: "/incidents", icon: "incidents" },
+      { label: "Business Health", path: "/business-health", icon: "business" },
+      { label: "Operations", path: "/operations", icon: "operations" }
+    ]
+  },
+  {
+    label: "INTELLIGENCE",
+    items: [
+      { label: "Investigation", path: "/investigation", icon: "investigation" },
+      { label: "Evidence", path: "/evidence", icon: "evidence" },
+      { label: "Agents", path: "/agents", icon: "agents" }
+    ]
+  },
+  {
+    label: "ACTION",
+    items: [
+      { label: "Remediation", path: "/remediation", icon: "remediation" },
+      { label: "Verification", path: "/verification", icon: "verification" }
+    ]
+  },
+  {
+    label: "REPORTING",
+    items: [
+      { label: "Reports", path: "/reports", icon: "reports" },
+      { label: "History", path: "/history", icon: "history" }
+    ]
+  },
+  {
+    label: "SYSTEM",
+    items: [{ label: "Settings", path: "/settings", icon: "settings" }]
+  }
 ];
 
-function HealthIndicator({ health, loading }: { health: HealthResponse | null; loading: boolean }) {
-  if (loading) {
-    return <StatusBadge value="loading" />;
-  }
+const pageTitles: Record<string, string> = {
+  "/command-center": "Command Center",
+  "/incidents": "Incidents",
+  "/business-health": "Business Health",
+  "/operations": "Operations",
+  "/investigation": "Investigation",
+  "/evidence": "Evidence Explorer",
+  "/agents": "Agent Fabric",
+  "/remediation": "Remediation",
+  "/verification": "Verification",
+  "/reports": "Reports",
+  "/history": "History",
+  "/settings": "Settings"
+};
 
-  return <StatusBadge value={health ? "online" : "offline"} />;
+function currentPageTitle(pathname: string): string {
+  if (pathname.startsWith("/incidents/")) return "Incident Detail";
+  if (pathname.startsWith("/investigation/")) return "Investigation Detail";
+  if (pathname.startsWith("/reports/")) return "Report Detail";
+  return pageTitles[pathname] ?? "Command Center";
 }
 
 export function AppShell() {
+  const location = useLocation();
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [healthLoading, setHealthLoading] = useState(true);
+  const [openCount, setOpenCount] = useState<number | null>(null);
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
+    setHealthLoading(true);
     getHealth()
       .then((payload) => {
         if (active) setHealth(payload);
@@ -48,62 +99,117 @@ export function AppShell() {
         if (active) setHealthLoading(false);
       });
 
+    listIncidents()
+      .then((incidents) => {
+        if (!active) return;
+        setOpenCount(incidents.filter((incident) => !["resolved", "closed", "cancelled"].includes(incident.status)).length);
+      })
+      .catch(() => {
+        if (active) setOpenCount(null);
+      });
+
     return () => {
       active = false;
     };
-  }, []);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname]);
+
+  const sidebarClass = useMemo(
+    () => `sidebar${collapsed ? " sidebar-collapsed" : ""}${mobileOpen ? " sidebar-mobile-open" : ""}`,
+    [collapsed, mobileOpen]
+  );
 
   return (
     <div className="app-shell">
-      <aside className="sidebar">
+      <aside className={sidebarClass} aria-label="NEXORA workspace navigation">
         <div className="brand-block">
           <div className="brand-mark" aria-hidden="true">N</div>
-          <div>
+          <div className="brand-copy">
             <div className="brand-name">NEXORA <span>ONE</span></div>
             <div className="brand-caption">OPERATIONS INTELLIGENCE</div>
           </div>
+          <button className="sidebar-close mobile-only" type="button" aria-label="Close navigation" onClick={() => setMobileOpen(false)}>
+            <Icon name="close" size={17} />
+          </button>
         </div>
 
         <div className="sidebar-rule" />
-        <div className="nav-label">WORKSPACE</div>
         <nav className="primary-nav" aria-label="Primary navigation">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              className={({ isActive }) => `nav-item${isActive ? " nav-item-active" : ""}`}
-            >
-              <span className="nav-code">{item.code}</span>
-              <span>{item.label}</span>
-            </NavLink>
+          <NavLink
+            to="/command-center"
+            className={({ isActive }) => `nav-item nav-command-item${isActive ? " nav-item-active" : ""}`}
+            title="Command Center"
+          >
+            <span className="nav-icon"><Icon name="command" size={16} /></span>
+            <span className="nav-item-label">Command Center</span>
+          </NavLink>
+          {navGroups.map((group) => (
+            <div className="nav-group" key={group.label}>
+              <div className="nav-label">{group.label}</div>
+              {group.items.map((item) => (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  className={({ isActive }) => `nav-item${isActive ? " nav-item-active" : ""}`}
+                  title={item.label}
+                >
+                  <span className="nav-icon"><Icon name={item.icon} size={16} /></span>
+                  <span className="nav-item-label">{item.label}</span>
+                </NavLink>
+              ))}
+            </div>
           ))}
         </nav>
 
         <div className="sidebar-footer">
           <div className="foundation-card">
-            <span className="eyebrow">PHASE 1 FOUNDATION</span>
-            <p>Bounded surfaces are live. Investigation and execution remain disabled until their phases.</p>
+            <span className="eyebrow">PHASE 2 COMMAND CENTER</span>
+            <p>Live intake is connected. Investigation and action remain explicitly bounded.</p>
           </div>
           <div className="operator-row">
             <span className="operator-avatar">OP</span>
-            <div>
+            <div className="operator-copy">
               <strong>Local operator</strong>
-              <span className="muted">Development workspace</span>
+              <span className="muted">Authentication not enabled</span>
             </div>
           </div>
         </div>
       </aside>
 
+      {mobileOpen ? <button className="mobile-scrim" type="button" aria-label="Close navigation" onClick={() => setMobileOpen(false)} /> : null}
+
       <main className="main-content">
         <header className="topbar">
-          <div>
-            <span className="topbar-kicker">NEXORA CONTROL PLANE</span>
+          <div className="topbar-left">
+            <button className="mobile-menu-button" type="button" aria-label="Open navigation" aria-expanded={mobileOpen} onClick={() => setMobileOpen(true)}>
+              <Icon name="menu" size={19} />
+            </button>
+            <div className="topbar-page-title">{currentPageTitle(location.pathname)}</div>
             <span className="topbar-divider">/</span>
-            <span className="muted">ShopFlow environment</span>
+            <span className="muted topbar-context">ShopFlow environment</span>
           </div>
-          <div className="topbar-status" title={health?.timestamp ? `Last checked ${health.timestamp}` : undefined}>
-            <span className="muted">API</span>
-            <HealthIndicator health={health} loading={healthLoading} />
+          <div className="topbar-right">
+            <div className={`system-status${health ? " is-operational" : healthLoading ? " is-loading" : " is-down"}`}>
+              <span className="system-status-dot" aria-hidden="true" />
+              <span>{health ? "NEXORA SYSTEMS OPERATIONAL" : healthLoading ? "CHECKING NEXORA SYSTEMS" : "NEXORA API UNAVAILABLE"}</span>
+            </div>
+            <div className="topbar-divider topbar-divider-right" />
+            <div className="alert-count" title="Derived from the live incident API">
+              <Icon name="bell" size={15} />
+              <span>{openCount === null ? "—" : openCount}</span>
+              <span className="topbar-muted">open</span>
+            </div>
+            <StatusBadge value={health?.environment ?? "pending"} label={health?.environment ?? "pending"} />
+            <div className="profile-chip" title="Authentication is not enabled in Phase 2">
+              <span className="profile-avatar">OP</span>
+              <span className="profile-name">Local operator</span>
+            </div>
+            <button className="sidebar-toggle desktop-only" type="button" aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"} onClick={() => setCollapsed((value) => !value)}>
+              <Icon name={collapsed ? "arrow" : "menu"} size={16} />
+            </button>
           </div>
         </header>
         <div className="content-wrap">

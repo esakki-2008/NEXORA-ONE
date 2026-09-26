@@ -61,9 +61,13 @@ Tool definitions carry input/output schemas, risk, and approval requirements. On
 The frontend is a Vite single-page app:
 
 - `api/` contains relative-path API clients;
-- `components/` contains shell, table, status, and empty/loading primitives;
-- `pages/` contains route-level surfaces;
-- `types.ts` mirrors only the public response contracts needed by Phase 1.
+- `components/` contains the shell, icon set, tables, health cards, timelines, status, and loading/error/empty primitives;
+- `hooks/` contains request lifecycle state with timeout/error/retry behavior;
+- `lib/` contains display formatting and domain-source mapping only;
+- `pages/` contains route-level command center, monitor, intelligence, action, reporting, and system surfaces;
+- `types.ts` mirrors only public response contracts and simulator records.
+
+Phase 2 uses real incident, activity, evidence, hypothesis, report, health, and simulator endpoints. When a source is absent, the UI says so instead of manufacturing a score or AI event. Simulator observations carry a visible simulator label and do not become live incident records.
 
 In development, Vite proxies `/health` and `/api` to the backend. Browser code never calls localhost directly; it calls relative paths so the same build works behind a preview host or reverse proxy.
 
