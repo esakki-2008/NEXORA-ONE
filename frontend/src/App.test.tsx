@@ -45,7 +45,7 @@ describe("NEXORA ONE application shell", () => {
       "fetch",
       vi.fn((input: RequestInfo | URL) => {
         const url = String(input);
-        if (url.endsWith("/health")) {
+        if (url === "/health") {
           return Promise.resolve(jsonResponse({
             status: "ok",
             service: "NEXORA ONE API",
@@ -53,6 +53,17 @@ describe("NEXORA ONE application shell", () => {
             timestamp: "2026-09-26T10:00:00Z"
           }));
         }
+        if (url.endsWith("/api/ai/health")) {
+          return Promise.resolve(jsonResponse({
+            provider: "nebius",
+            model: "not configured",
+            status: "not_configured",
+            verified: false,
+            message: "Nebius AI is not configured.",
+            last_verified_at: null
+          }));
+        }
+        if (url.endsWith("/api/ai/activity")) return Promise.resolve(jsonResponse([]));
         if (url.endsWith("/api/incidents")) return Promise.resolve(jsonResponse([incident]));
         if (url.endsWith("/activity") || url.endsWith("/evidence") || url.endsWith("/hypotheses")) return Promise.resolve(jsonResponse([]));
         if (url.endsWith("/report")) return Promise.resolve(jsonResponse(reportResponse()));

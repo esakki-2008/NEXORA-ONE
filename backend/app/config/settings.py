@@ -3,7 +3,7 @@
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import SecretStr
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -11,8 +11,8 @@ class Settings(BaseSettings):
     """Runtime settings.
 
     Secrets are represented as ``SecretStr`` and are never included in normal
-    representations. Phase 1 deliberately does not instantiate an external AI
-    client; the Nebius fields are reserved for the Phase 3 adapter.
+    representations. Nebius fields configure the server-only Phase 3 provider;
+    no frontend setting is read for the provider credential.
     """
 
     model_config = SettingsConfigDict(
@@ -30,6 +30,8 @@ class Settings(BaseSettings):
     nebius_api_key: SecretStr | None = None
     nebius_model: str | None = None
     nebius_base_url: str | None = None
+    nebius_timeout_seconds: float = Field(default=60.0, gt=0, le=300)
+    nebius_max_retries: int = Field(default=2, ge=0, le=5)
     tavily_api_key: SecretStr | None = None
 
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"

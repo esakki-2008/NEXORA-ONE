@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 
+import { getAIActivity, getAIHealth } from "../api/ai";
 import { getHealth } from "../api/health";
 import { listIncidentActivity, listIncidents } from "../api/incidents";
 import { listScenarioSummaries } from "../api/simulator";
@@ -17,20 +18,23 @@ import { SectionHeading } from "../components/SectionHeading";
 import { StatusBadge } from "../components/StatusBadge";
 import { useAsyncData } from "../hooks/useAsyncData";
 import { formatDateTime } from "../lib/format";
-import type { ActivityEvent, HealthResponse, Incident, ScenarioSummary } from "../types";
+import type { ActivityEvent, AIHealthResponse, HealthResponse, Incident, ScenarioSummary } from "../types";
 
 interface CommandCenterData {
   incidents: Incident[];
   activity: ActivityEvent[];
   scenarios: ScenarioSummary[] | null;
   health: HealthResponse | null;
+  aiHealth: AIHealthResponse | null;
 }
 
 async function loadCommandCenter(): Promise<CommandCenterData> {
-  const [healthResult, incidentsResult, scenariosResult] = await Promise.allSettled([
+  const [healthResult, incidentsResult, scenariosResult, aiHealthResult, aiActivityResult] = await Promise.allSettled([
     getHealth(),
     listIncidents(),
-    listScenarioSummaries()
+    listScenarioSummaries(),
+    getAIHealth(),
+    getAIActivity()
   ]);
 
   if (incidentsResult.status === "rejected") throw incidentsResult.reason;
@@ -45,15 +49,17 @@ async function loadCommandCenter(): Promise<CommandCenterData> {
     })
   );
 
-  const activity = activityResults
-    .flat()
-    .sort((left, right) => new Date(right.created_at).getTime() - new Date(left.created_at).getTime());
+  const activity = [
+    ...(aiActivityResult.status === "fulfilled" ? aiActivityResult.value : []),
+    ...activityResults.flat()
+  ].sort((left, right) => new Date(right.created_at).getTime() - new Date(left.created_at).getTime());
 
   return {
     incidents,
     activity,
     scenarios: scenariosResult.status === "fulfilled" ? scenariosResult.value : null,
-    health: healthResult.status === "fulfilled" ? healthResult.value : null
+    health: healthResult.status === "fulfilled" ? healthResult.value : null,
+    aiHealth: aiHealthResult.status === "fulfilled" ? aiHealthResult.value : null
   };
 }
 
@@ -73,6 +79,17 @@ export function CommandCenterPage() {
   const activeIncidents = incidents.filter((incident) => !["resolved", "closed", "cancelled"].includes(incident.status));
   const criticalCount = activeIncidents.filter((incident) => incident.severity === "critical").length;
   const scenarioCount = data?.scenarios?.length ?? null;
+  const aiStatusLabel = data?.aiHealth?.verified
+    ? "CONNECTED"
+    : data?.aiHealth?.status === "not_configured"
+      ? "NOT CONFIGURED"
+      : data?.aiHealth?.status === "provider_unavailable"
+        ? "PROVIDER UNAVAILABLE"
+        : data?.aiHealth?.status === "authentication_failed"
+          ? "AUTHENTICATION FAILED"
+          : data?.aiHealth?.status === "model_unavailable"
+            ? "MODEL UNAVAILABLE"
+            : "NOT VERIFIED";
 
   return (
     <section className="page-section">
@@ -104,7 +121,7 @@ export function CommandCenterPage() {
           {activeIncidents.length ? <IncidentTable incidents={activeIncidents} /> : <EmptyState title="No active incidents" description="NEXORA has not received an active incident record from the connected API." compact />}
         </Panel>
         <Panel>
-          <SectionHeading eyebrow="OBSERVABLE ACTIVITY" title="AI activity" description="Concise backend events only. Private model reasoning is never displayed." />
+          <SectionHeading eyebrow="OBSERVABLE ACTIVITY" title="AI activity" description="Concise backend events only. Private model reasoning is never displayed." action={<StatusBadge value={aiStatusLabel.toLowerCase().replace(/ /g, "-")} label={`AI ${aiStatusLabel}`} dot />} />
           <ActivityTimeline events={data?.activity ?? []} compact />
         </Panel>
       </div>
@@ -122,7 +139,7 @@ export function CommandCenterPage() {
               <div className="scenario-row" key={scenario.scenario_id}>
                 <div><StatusBadge value={scenario.severity} dot /><strong>{scenario.name}</strong></div>
                 <span>{scenario.description}</span>
-                <span className="muted scenario-source">Simulator fixture</span>
+                <span className="muted scenario-source">Synthetic/demo data · simulator fixture</span>
               </div>
             ))}
           </div>

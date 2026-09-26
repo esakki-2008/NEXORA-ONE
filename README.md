@@ -4,7 +4,7 @@
 
 NEXORA ONE is an autonomous enterprise operations AI platform foundation for the Nebius × NVIDIA Global AI Hackathon 2026, Best Apps & Agents track. It is designed for companies whose operational truth is distributed across applications, payments, databases, cloud infrastructure, support, supply chain, deployments, and compliance systems.
 
-Phase 1 establishes the boundaries needed to observe, investigate, understand, correlate, prioritize, plan, request approval, act, verify, and report without pretending that later capabilities already exist. Phase 2 builds the enterprise command center on those boundaries, connecting operational screens to real API and simulator data.
+Phase 1 establishes the boundaries needed to observe, investigate, understand, correlate, prioritize, plan, request approval, act, verify, and report without pretending that later capabilities already exist. Phase 2 builds the enterprise command center on those boundaries, connecting operational screens to real API and simulator data. Phase 3 adds the real Nebius Token Factory and NVIDIA Nemotron inference boundary with validated structured responses, bounded retries, and observable lifecycle events.
 
 ## Problem
 
@@ -20,7 +20,7 @@ OBSERVE → INVESTIGATE → UNDERSTAND → CORRELATE → PRIORITIZE
 PLAN → REQUEST APPROVAL → ACT → VERIFY → REPORT
 ```
 
-Phase 1 provides the contracts and runnable shell for that flow. Phase 2 provides the functional enterprise command center and connected read surfaces. The product still intentionally does **not** run an autonomous investigation, call an AI provider, or execute remediation.
+Phase 1 provides the contracts and runnable shell for that flow. Phase 2 provides the functional enterprise command center and connected read surfaces. Phase 3 performs only bounded, evidence-grounded Nemotron analysis: it does not orchestrate agents, execute tools, run shell commands, mutate production, or bypass human approval.
 
 ## Why it matters
 
@@ -87,25 +87,33 @@ The domain model starts with incidents, evidence, hypotheses, actions, approvals
 
 ## Nebius + NVIDIA strategy
 
-The target inference path is fixed:
+The Phase 3 inference path is fixed and server-only:
 
 ```text
-NEXORA orchestrator → Nebius Token Factory → NVIDIA Nemotron → structured decision
+Frontend → NEXORA Backend → NEXORA AI Service → Nebius Token Factory → NVIDIA Nemotron
+                                                       ↓
+                                  validated structured response → Command Center
 ```
 
-Phase 1 has a provider-neutral `AIProvider` contract, a typed request/decision envelope, and explicit unconfigured/Nebius-Nemotron adapter boundaries. It makes no network call and returns no fabricated answer. Phase 3 will add the real Nebius transport and structured response validation; it will not replace the target architecture with OpenAI, Gemini, Claude, OpenRouter, or Ollama.
+`NebiusNemotronProvider` uses Nebius's OpenAI-compatible `/v1/chat/completions` HTTP contract through `httpx`. The model identifier is always supplied by `NEBIUS_MODEL`; no alternate vendor, local model, or hardcoded model output is used. Responses request JSON mode and are validated against `AIAnalysisResponse` before the service or frontend consumes them. Evidence references are grounded to the source evidence index and trusted source/summary fields are copied server-side; model output cannot introduce a new evidence record.
+
+The analysis service accepts either a persisted live incident or a read-only ShopFlow fixture. It labels simulator context as `synthetic_demo_data`, sends only the selected source evidence, and emits concise lifecycle events without private model reasoning. Tool calls are allow-listed proposals from the existing catalog; Phase 3 never executes them.
+
+Provider failures fail closed. Missing configuration, authentication failure, unavailable model/provider, timeout, rejected request, malformed JSON, and schema validation failure become typed safe errors. Retries are bounded by `NEBIUS_MAX_RETRIES` and only apply to transient transport/provider failures. `NEBIUS_API_KEY` remains a server-side `SecretStr` and is never placed in frontend code, API responses, activity metadata, or logs.
 
 ## Security model
 
-Phase 1 establishes the following controls:
+Phase 3 preserves the Phase 1/2 controls and adds:
 
-- environment-only configuration; `.env` is ignored and `.env.example` contains no values;
-- no API keys are exposed to the frontend;
-- Pydantic request and response validation with unknown input fields rejected;
-- generic, bounded API errors rather than stack traces or secret-bearing logs;
-- explicit `ToolDefinition` metadata with `risk_level` and `requires_approval`;
-- an allow-listed `ToolRegistry` with no arbitrary shell, subprocess, eval, or model-supplied command execution;
-- activity records that create an audit-friendly trail;
+- environment-only configuration; `.env` is ignored and `.env.example` contains no credential values;
+- `NEBIUS_API_KEY` is server-only and represented by `SecretStr`; it is absent from frontend bundles, responses, events, and provider error messages;
+- Pydantic request and response validation with unknown fields rejected and every model response validated before use;
+- generic, bounded API errors rather than stack traces, provider bodies, private reasoning, or secret-bearing logs;
+- explicit `ToolDefinition` metadata with `risk_level` and `requires_approval`; selected tool proposals must match the allow-list;
+- an allow-listed `ToolRegistry` with no arbitrary shell, subprocess, eval, Python, or model-supplied command execution;
+- bounded provider retries, request timeouts, status-aware failures, and no fake success when configuration or connectivity is missing;
+- observable AI lifecycle events containing only status/source metadata and concise messages;
+- human approval remains required for risky recommendations; Phase 3 has no action executor or approval bypass;
 - explicit verification contracts for proving a controlled action changed the expected state.
 
 See [docs/security.md](docs/security.md).
@@ -124,9 +132,9 @@ The simulator contains structured services, deployments, configurations, metrics
 
 ## Current phase
 
-**Phase 2 — Enterprise Command Center**
+**Phase 3 — Nebius + NVIDIA AI Core**
 
-Phase 1 remains intact and Phase 2 adds:
+Phase 1 and Phase 2 remain intact. Phase 3 adds:
 
 - premium enterprise command center with real incident and simulator source boundaries;
 - grouped responsive navigation for monitoring, intelligence, action, reporting, and system surfaces;
@@ -137,9 +145,13 @@ Phase 1 remains intact and Phase 2 adds:
 - investigation queue/detail surfaces that show structured evidence and hypotheses without exposing private model reasoning;
 - honest agent directory, verification, reports, history, remediation boundary, and settings surfaces;
 - loading skeletons, retryable errors, source-aware empty states, accessible controls, and responsive desktop/tablet/mobile behavior;
-- frontend route coverage tests and production build verification.
+- frontend route coverage tests and production build verification;
+- server-only Nebius/Nemotron provider verification and safe AI status in the existing Command Center;
+- validated analysis for live incidents or clearly labeled synthetic ShopFlow evidence;
+- provider test control in Settings, backend-sourced AI health, and observable AI lifecycle events;
+- mocked provider tests covering success, retries, authentication, unavailable provider/model, timeout, malformed output, and missing configuration.
 
-Still intentionally not implemented: autonomous investigation, specialist agent execution, real model calls, remediation execution, approval workflows, verification execution, fake metrics, fabricated AI activity, or production authentication.
+Still intentionally not implemented: Phase 4 orchestration, autonomous investigation, specialist-agent execution, tool execution, arbitrary shell/subprocess/Python execution, production mutation, rollback, approval workflows, approval bypass, verification execution, fake metrics, fabricated AI activity, or production authentication.
 
 ## Ten-phase roadmap
 
@@ -192,10 +204,12 @@ Copy `.env.example` to `.env`. The important variables are:
 | Variable | Purpose |
 | --- | --- |
 | `DATABASE_URL` | Future PostgreSQL-compatible adapter URL; Phase 1 uses in-process storage |
-| `NEBIUS_API_KEY` | Reserved for the Phase 3 Nebius Token Factory adapter |
-| `NEBIUS_MODEL` | Reserved NVIDIA Nemotron model identifier |
-| `NEBIUS_BASE_URL` | Reserved Nebius endpoint |
-| `TAVILY_API_KEY` | Reserved for a future bounded research tool |
+| `NEBIUS_API_KEY` | Server-only Nebius Token Factory credential; never put this in frontend/Vite variables |
+| `NEBIUS_MODEL` | NVIDIA Nemotron model identifier supplied at runtime |
+| `NEBIUS_BASE_URL` | Nebius OpenAI-compatible base URL, normally including `/v1/` |
+| `NEBIUS_TIMEOUT_SECONDS` | Provider request timeout; defaults to `60` |
+| `NEBIUS_MAX_RETRIES` | Bounded transient retry count; defaults to `2` |
+| `TAVILY_API_KEY` | Reserved for a future bounded research tool; unused in Phase 3 |
 | `CORS_ORIGINS` | Comma-separated browser origins |
 
 Never commit `.env` or credentials.
@@ -214,8 +228,12 @@ Never commit `.env` or credentials.
 | `GET` | `/api/incidents/{id}/report` | Retrieve a generated report; returns 404 when none exists |
 | `GET` | `/api/simulator/scenarios` | List structured ShopFlow scenario fixtures |
 | `GET` | `/api/simulator/scenarios/{scenario_id}` | Retrieve one read-only ShopFlow fixture |
+| `GET` | `/api/ai/health` | Return safe Nebius configuration/last-verification status |
+| `POST` | `/api/ai/test` | Make a real bounded structured Nemotron verification request |
+| `POST` | `/api/ai/analyze` | Analyze one live incident or one synthetic ShopFlow scenario |
+| `GET` | `/api/ai/activity` | Return concise observable AI lifecycle events; optionally filter by incident |
 
-The Phase 2 frontend uses these existing read surfaces. Future endpoints such as investigate, approve, execute, and verify are deliberately not registered yet.
+The Phase 3 frontend uses the AI health and activity surfaces without receiving credentials. The provider test and analysis routes never execute tools or actions. Future endpoints such as investigate, approve, execute, and verify are deliberately not registered yet.
 
 ## Testing and checks
 

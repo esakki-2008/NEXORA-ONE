@@ -55,11 +55,70 @@ export interface Incident {
 
 export interface ActivityEvent {
   id: string;
-  incident_id: string;
+  incident_id: string | null;
   event_type: string;
   message: string;
   created_at: string;
   metadata: Record<string, unknown>;
+}
+
+export interface AIActivityEvent extends ActivityEvent {}
+
+export type AIHealthStatus =
+  | "configured"
+  | "not_configured"
+  | "authentication_failed"
+  | "provider_unavailable"
+  | "model_unavailable"
+  | "timeout"
+  | "error";
+
+export interface AIHealthResponse {
+  provider: "nebius";
+  model: string;
+  status: AIHealthStatus;
+  verified: boolean;
+  message: string;
+  last_verified_at: string | null;
+}
+
+export interface AITestResponse {
+  success: boolean;
+  status: AIHealthStatus;
+  message: string;
+  response: AIAnalysisResponse | null;
+}
+
+export interface AIAnalysisResponse {
+  status: string;
+  current_step: string;
+  summary: string;
+  selected_tools: Array<{
+    tool_name: string;
+    arguments: Record<string, unknown>;
+    risk_level: string;
+    reason: string;
+  }>;
+  evidence: Array<{ evidence_id: string; source: string; summary: string }>;
+  hypotheses: Array<{
+    title: string;
+    description: string;
+    confidence: number;
+    supporting_evidence: string[];
+    contradicting_evidence: string[];
+    validation_status: string;
+  }>;
+  validated_hypothesis: string | null;
+  recommendation: {
+    action: string;
+    rationale: string;
+    risk_level: string;
+    requires_approval: boolean;
+  } | null;
+  risk_level: string;
+  requires_approval: boolean;
+  verification_plan: Array<{ check: string; expected_state: Record<string, unknown> }>;
+  confidence: number;
 }
 
 export interface Evidence {

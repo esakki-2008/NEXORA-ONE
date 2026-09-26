@@ -74,7 +74,7 @@ export function EvidencePage() {
 
   return (
     <section className="page-section">
-      <PageHeader eyebrow="INTELLIGENCE / EVIDENCE" title="Evidence explorer" description="Search recorded incident evidence alongside clearly labeled ShopFlow simulator observations. Relevance is never inferred for simulator data." actions={<button className="secondary-button" type="button" onClick={reload} disabled={isLoading}><Icon name="refresh" size={14} /> Refresh evidence</button>} />
+      <PageHeader eyebrow="INTELLIGENCE / EVIDENCE" title="Evidence explorer" description="Search recorded incident evidence alongside ShopFlow observations labeled synthetic/demo data. Relevance is never inferred for simulator data." actions={<button className="secondary-button" type="button" onClick={reload} disabled={isLoading}><Icon name="refresh" size={14} /> Refresh evidence</button>} />
       <Panel>
         <SectionHeading eyebrow="EVIDENCE LEDGER" title={`${data?.records.length ?? 0} records available`} description={`${data?.scenarioCount ?? 0} ShopFlow simulator fixtures loaded. Live evidence is sourced from incident APIs.`} action={<StatusBadge value="source-aware" label="Source-aware" dot />} />
         <div className="filter-bar" aria-label="Evidence filters">

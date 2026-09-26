@@ -38,7 +38,7 @@ export function EvidenceTable({ records }: EvidenceTableProps) {
               <td className="muted">{formatShortTime(record.timestamp)}</td>
               <td className="evidence-summary">{record.summary}</td>
               <td>{record.relevance === null ? <span className="muted">Not scored</span> : <span className="relevance-value">{formatPercent(record.relevance)}</span>}</td>
-              <td><span className={`source-badge source-${record.status}`}>{record.status === "simulator" ? "Simulator" : "Recorded"}</span></td>
+              <td><span className={`source-badge source-${record.status}`}>{record.status === "simulator" ? "Synthetic/demo · simulator" : "Recorded"}</span></td>
             </tr>
           ))}
         </tbody>

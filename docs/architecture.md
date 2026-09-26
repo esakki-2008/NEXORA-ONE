@@ -1,4 +1,6 @@
-# NEXORA ONE foundation architecture
+# NEXORA ONE architecture
+
+Phase 3 preserves the Phase 1 foundation and Phase 2 Command Center while adding a server-only, validated Nebius/NVIDIA inference boundary.
 
 ## Design goals
 
@@ -13,7 +15,7 @@
 backend/app/
 ├── api/            FastAPI routes and dependency wiring
 ├── agents/         agent contracts, registry, orchestrator boundary, state graph
-├── ai/             provider-neutral request/decision contracts and provider boundary
+├── ai/             Nebius/Nemotron provider, validated schemas, service, and lifecycle events
 ├── config/         environment-backed settings
 ├── database/       repository port and Phase 1 in-memory adapter
 ├── models/         canonical domain records and enums
@@ -34,7 +36,21 @@ Routes validate HTTP data using Pydantic and delegate to `IncidentService`. The 
 
 ### AI boundary
 
-`AIRequest` and `StructuredAgentDecision` are the only objects an orchestrator should exchange with a model adapter. `AIProvider` is a protocol. `NebiusNemotronProvider` currently fails explicitly rather than making an untested network request. Phase 3 can implement HTTP transport, timeouts, authentication, structured-output validation, and observability behind that port.
+The required path is:
+
+```text
+Frontend → FastAPI NEXORA Backend → AIService → Nebius Token Factory → NVIDIA Nemotron
+                                                                  ↓
+                                         validated AIAnalysisResponse → Command Center
+```
+
+`AIRequest` is the provider-neutral input contract. `NebiusNemotronProvider` is the only Phase 3 provider and uses the Nebius OpenAI-compatible chat-completions endpoint through `httpx`. It receives `NEBIUS_API_KEY`, `NEBIUS_BASE_URL`, `NEBIUS_MODEL`, `NEBIUS_TIMEOUT_SECONDS`, and `NEBIUS_MAX_RETRIES` from server settings. The key is held as `SecretStr` and is not part of an `AIHealthResponse`, `AIActivityEvent`, exception message, or frontend contract.
+
+`AIService` is the application boundary. It normalizes one live incident or one read-only ShopFlow fixture, marks fixtures as `synthetic_demo_data`, builds a constrained prompt with the response schema and future tool catalog, invokes the provider, and consumes only the already-validated `AIAnalysisResponse`. There is no provider fallback and no fabricated output when configuration or connectivity is missing.
+
+The provider requests JSON mode, handles authentication/model/provider/timeout/retry failures without returning upstream bodies, parses the OpenAI-compatible envelope, and validates the model content with Pydantic. The response envelope contains status, current step, summary, selected tool proposals, evidence, hypotheses, validated hypothesis, recommendation, risk, approval requirement, verification plan, and confidence. Evidence references are checked against an NEXORA-supplied evidence index and trusted source/summary fields are copied from that index, so the model cannot add fabricated evidence. Selected tools must belong to `FOUNDATION_TOOL_CATALOG` and match its risk metadata; they remain proposals and are never executed in Phase 3.
+
+`GET /api/ai/health` reports configuration and the last real verification state. `POST /api/ai/test` performs a real structured request, so `verified` becomes true only after a successful provider response passes validation. `POST /api/ai/analyze` is evidence-bound. `GET /api/ai/activity` returns concise lifecycle events only—no prompt, completion, chain-of-thought, or credential.
 
 ### Agent boundary
 
@@ -67,14 +83,14 @@ The frontend is a Vite single-page app:
 - `pages/` contains route-level command center, monitor, intelligence, action, reporting, and system surfaces;
 - `types.ts` mirrors only public response contracts and simulator records.
 
-Phase 2 uses real incident, activity, evidence, hypothesis, report, health, and simulator endpoints. When a source is absent, the UI says so instead of manufacturing a score or AI event. Simulator observations carry a visible simulator label and do not become live incident records.
+Phase 2 uses real incident, activity, evidence, hypothesis, report, health, and simulator endpoints. Phase 3 extends the existing UI with backend-sourced AI health, a verified-only `AI CONNECTED` status, a safe Settings provider test, and the AI lifecycle activity feed. When a source is absent, the UI says so instead of manufacturing a score, provider connection, recommendation, or AI event. Simulator observations carry a visible synthetic/demo label and do not become live incident records.
 
 In development, Vite proxies `/health` and `/api` to the backend. Browser code never calls localhost directly; it calls relative paths so the same build works behind a preview host or reverse proxy.
 
 ## Extension path
 
 - Phase 2 can add dashboard query services without changing incident records.
-- Phase 3 can add a real Nebius/Nemotron adapter behind `AIProvider`.
+- Phase 3 now provides the real Nebius/Nemotron adapter, validated response contract, health/test/analyze/activity routes, and mocked provider tests.
 - Phase 4 can register specialist agents and orchestrator policies.
 - Phase 5 can persist evidence and hypotheses through repository extensions.
 - Phase 6 can add domain-specific repositories and tools.

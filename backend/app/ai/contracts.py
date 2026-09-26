@@ -7,20 +7,22 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from backend.app.ai.schemas import AIAnalysisResponse
+
 
 class AIRequest(BaseModel):
-    """Structured input an orchestrator may send to a model adapter."""
+    """Structured input sent to a provider adapter."""
 
     model_config = ConfigDict(extra="forbid")
 
     system_instruction: str = Field(min_length=1, max_length=20_000)
-    user_input: str = Field(min_length=1, max_length=20_000)
+    user_input: str = Field(min_length=1, max_length=30_000)
     context: dict[str, Any] = Field(default_factory=dict)
     requested_output_schema: dict[str, Any] = Field(default_factory=dict)
 
 
 class StructuredAgentDecision(BaseModel):
-    """Provider-independent decision envelope for future Nemotron output."""
+    """Legacy Phase 1 envelope retained for compatibility with agent contracts."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -33,6 +35,7 @@ class StructuredAgentDecision(BaseModel):
 
 
 class AIProvider(Protocol):
-    """Async provider port implemented by Nebius Token Factory in Phase 3."""
+    """Provider port implemented by Nebius Token Factory in Phase 3."""
 
-    async def decide(self, request: AIRequest) -> StructuredAgentDecision: ...
+    async def decide(self, request: AIRequest) -> AIAnalysisResponse:
+        ...

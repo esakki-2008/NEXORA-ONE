@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 
+import { getAIHealth } from "../api/ai";
 import { getHealth } from "../api/health";
 import { listIncidents } from "../api/incidents";
-import type { HealthResponse } from "../types";
+import type { AIHealthResponse, HealthResponse } from "../types";
 import { Icon, type IconName } from "./Icon";
 import { StatusBadge } from "./StatusBadge";
 
@@ -80,6 +81,7 @@ function currentPageTitle(pathname: string): string {
 export function AppShell() {
   const location = useLocation();
   const [health, setHealth] = useState<HealthResponse | null>(null);
+  const [aiHealth, setAIHealth] = useState<AIHealthResponse | null>(null);
   const [healthLoading, setHealthLoading] = useState(true);
   const [openCount, setOpenCount] = useState<number | null>(null);
   const [collapsed, setCollapsed] = useState(false);
@@ -88,16 +90,12 @@ export function AppShell() {
   useEffect(() => {
     let active = true;
     setHealthLoading(true);
-    getHealth()
-      .then((payload) => {
-        if (active) setHealth(payload);
-      })
-      .catch(() => {
-        if (active) setHealth(null);
-      })
-      .finally(() => {
-        if (active) setHealthLoading(false);
-      });
+    Promise.allSettled([getHealth(), getAIHealth()]).then(([healthResult, aiResult]) => {
+      if (!active) return;
+      setHealth(healthResult.status === "fulfilled" ? healthResult.value : null);
+      setAIHealth(aiResult.status === "fulfilled" ? aiResult.value : null);
+      setHealthLoading(false);
+    });
 
     listIncidents()
       .then((incidents) => {
@@ -116,6 +114,20 @@ export function AppShell() {
   useEffect(() => {
     setMobileOpen(false);
   }, [location.pathname]);
+
+  const aiStatusLabel = aiHealth?.verified
+    ? "AI CONNECTED"
+    : healthLoading
+      ? "CHECKING AI"
+      : aiHealth?.status === "not_configured"
+        ? "AI NOT CONFIGURED"
+        : aiHealth?.status === "provider_unavailable"
+          ? "AI PROVIDER UNAVAILABLE"
+          : aiHealth?.status === "authentication_failed"
+            ? "AI AUTHENTICATION FAILED"
+            : aiHealth?.status === "model_unavailable"
+              ? "AI MODEL UNAVAILABLE"
+              : "AI NOT VERIFIED";
 
   const sidebarClass = useMemo(
     () => `sidebar${collapsed ? " sidebar-collapsed" : ""}${mobileOpen ? " sidebar-mobile-open" : ""}`,
@@ -195,6 +207,10 @@ export function AppShell() {
             <div className={`system-status${health ? " is-operational" : healthLoading ? " is-loading" : " is-down"}`}>
               <span className="system-status-dot" aria-hidden="true" />
               <span>{health ? "NEXORA SYSTEMS OPERATIONAL" : healthLoading ? "CHECKING NEXORA SYSTEMS" : "NEXORA API UNAVAILABLE"}</span>
+            </div>
+            <div className={`system-status${aiHealth?.verified ? " is-operational" : healthLoading ? " is-loading" : aiHealth ? " is-loading" : " is-down"}`} title={aiHealth?.message ?? "AI provider health unavailable"}>
+              <span className="system-status-dot" aria-hidden="true" />
+              <span>{aiStatusLabel}</span>
             </div>
             <div className="topbar-divider topbar-divider-right" />
             <div className="alert-count" title="Derived from the live incident API">

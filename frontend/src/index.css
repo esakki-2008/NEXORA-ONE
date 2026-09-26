@@ -148,12 +148,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 
 .status-badge { display: inline-flex; align-items: center; gap: 5px; width: fit-content; padding: 4px 7px; border: 1px solid var(--line); color: var(--muted); font-size: 9px; font-weight: 760; letter-spacing: .075em; line-height: 1.1; text-transform: uppercase; white-space: nowrap; }
 .status-dot { width: 5px; height: 5px; flex: 0 0 auto; border-radius: 50%; background: currentColor; box-shadow: 0 0 6px currentColor; }
-.status-online, .status-operational, .status-ready, .status-resolved, .status-closed, .status-no-issues, .status-supported { border-color: rgba(102, 214, 162, .32); color: var(--green); background: rgba(102, 214, 162, .06); }
-.status-offline, .status-critical, .status-failed, .status-cancelled, .status-attention { border-color: rgba(255, 119, 127, .38); color: var(--red); background: rgba(255, 119, 127, .05); }
+.status-online, .status-operational, .status-ready, .status-resolved, .status-closed, .status-no-issues, .status-supported, .status-connected { border-color: rgba(102, 214, 162, .32); color: var(--green); background: rgba(102, 214, 162, .06); }
+.status-offline, .status-critical, .status-failed, .status-cancelled, .status-attention, .status-provider-unavailable, .status-authentication-failed, .status-model-unavailable { border-color: rgba(255, 119, 127, .38); color: var(--red); background: rgba(255, 119, 127, .05); }
 .status-loading, .status-pending, .status-investigating, .status-warning, .status-remediation-proposed, .status-validating { border-color: rgba(245, 194, 107, .34); color: var(--amber); background: rgba(245, 194, 107, .04); }
 .status-low, .status-read-only, .status-api-backed, .status-source-aware, .status-phase-4, .status-info, .status-open, .status-incident-received, .status-observing { border-color: rgba(139, 169, 255, .32); color: var(--blue); background: rgba(139, 169, 255, .04); }
 .status-high { border-color: rgba(255, 174, 115, .38); color: var(--orange); background: rgba(255, 174, 115, .04); }
-.status-medium, .status-inconclusive, .status-unvalidated, .status-not-scored { border-color: rgba(245, 194, 107, .3); color: var(--amber); }
+.status-medium, .status-inconclusive, .status-unvalidated, .status-not-scored, .status-not-verified { border-color: rgba(245, 194, 107, .3); color: var(--amber); }
 .status-not-configured, .status-not-enabled, .status-not-started, .status-source-boundary, .status-phase-7 { border-color: var(--line); color: var(--muted); background: transparent; }
 
 .table-wrap, .operations-table-wrap, .reports-table-wrap { overflow-x: auto; }
