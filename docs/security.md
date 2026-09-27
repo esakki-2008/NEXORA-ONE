@@ -1,8 +1,8 @@
 # NEXORA ONE security posture
 
-NEXORA ONE treats an AI model as an untrusted planner, not as an operating-system user. Phase 3 adds real Nebius Token Factory and NVIDIA Nemotron inference without enabling orchestration or execution.
+NEXORA ONE treats an AI model as an untrusted planner, not as an operating-system user. Phase 4 reuses the real Phase 3 Nebius Token Factory and NVIDIA Nemotron service behind a server-owned orchestrator, policy gate, fixed simulator actions, and verification boundary.
 
-## Phase 3 controls
+## Phase 4 controls (plus Phase 1–3 controls)
 
 - Secrets are loaded from environment variables through `pydantic-settings`.
 - `.env`, local databases, private keys, and build artifacts are ignored.
@@ -18,7 +18,13 @@ NEXORA ONE treats an AI model as an untrusted planner, not as an operating-syste
 - ShopFlow Payment Failure and the other simulator fixtures are explicitly marked synthetic/demo data. They are read-only and cannot create or mutate live incidents.
 - Tools are explicit allow-list entries with input/output metadata, risk, and approval flags. Selected tools in an AI response must match the allow-list and are proposals only.
 - The tool registry accepts bounded `ControlledTool` objects only. There is no arbitrary command, shell, subprocess, eval, Python, dynamic import, or model-supplied executable path.
-- Phase 3 has no action executor, rollback, production mutation, autonomous orchestration, approval bypass, or verification executor.
+- The Phase 4 context contains no prompt, completion, private reasoning, secret, or credential fields; public activity is concise and auditable.
+- The explicit state machine rejects arbitrary jumps. `RESOLVED` is reachable only after successful verification; insufficient/conflicting evidence, unavailable tools, policy blocks, rejected/expired approvals, action failures, and verification failures escalate safely.
+- `ToolPolicy` is server-owned. READ_ONLY tools may run automatically; only explicitly permitted LOW-risk tools may run without approval; MEDIUM/HIGH risk requires a valid server-side approval that covers the actual catalog risk.
+- Every tool is allow-listed, enabled by server metadata, strictly validated with `extra="forbid"`, and returns a structured status, result, evidence, timestamp, risk, and execution ID.
+- There is no shell, subprocess, `shell=True`, arbitrary Python, `eval`, `exec`, dynamic command, or model-generated command execution. The only state-changing actions are in-memory ShopFlow `restart_payment_service` and `rollback_simulated_deployment`, both marked `production_change: false`.
+- Approval IDs and execution/idempotency keys prevent duplicate action execution. The frontend cannot grant approval, execute a tool, or mark an incident resolved independently.
+- Phase 4 has an action executor only for the isolated simulator; it does not perform production mutation, real rollback, unrestricted autonomy, approval bypass, or resolution without verification.
 
 ## Failure and disclosure policy
 
@@ -28,7 +34,7 @@ API callers receive generic messages such as `Nebius authentication failed`, `AI
 
 ## Current application boundary
 
-The existing local operator surface does not implement production user authentication or tenant authorization. That is an explicit limitation, not an implied security guarantee. Phase 3 provider authentication is server-to-Nebius bearer authentication only.
+The existing local operator surface does not implement production user authentication or tenant authorization. That is an explicit limitation, not an implied security guarantee. Phase 3 provider authentication is server-to-Nebius bearer authentication only; Phase 4 approval identity is an auditable operator field, not a production authorization system.
 
 ## Required future hardening
 
@@ -43,4 +49,4 @@ Before production or autonomous action is enabled, add:
 - tool-specific authorization, dry-run support, rollback policy, approval expiry, and action allow-lists;
 - durable verification records, provider/model allow-lists, and independent security review.
 
-No Phase 3 code should be interpreted as authorization to execute a remediation action.
+No Phase 4 code should be interpreted as authorization to execute a production remediation action. Simulator execution is an isolated demonstration boundary only.

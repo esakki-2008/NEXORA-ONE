@@ -1,10 +1,10 @@
-"""Future tool metadata; no tool is executable in Phase 1."""
+"""Allow-listed tool metadata used by the Phase 4 orchestrator."""
 
 from backend.app.models.enums import RiskLevel
 from backend.app.tools.contracts import ToolDefinition
 from backend.app.tools.registry import ToolCatalog
 
-FOUNDATION_TOOL_DEFINITIONS = (
+_RAW_FOUNDATION_TOOL_DEFINITIONS = (
     ToolDefinition(
         name="get_logs",
         description="Read bounded, time-windowed logs for an allow-listed service.",
@@ -72,7 +72,17 @@ FOUNDATION_TOOL_DEFINITIONS = (
     ToolDefinition(
         name="execute_safe_action",
         description="Execute one explicitly allow-listed reversible action after approval.",
-        input_schema={"type": "object", "required": ["action_id", "parameters"]},
+        input_schema={
+            "type": "object",
+            "required": ["action_name", "parameters"],
+            "properties": {
+                "action_name": {
+                    "type": "string",
+                    "enum": ["restart_payment_service", "rollback_simulated_deployment"],
+                },
+                "parameters": {"type": "object"},
+            },
+        },
         output_schema={"type": "object"},
         risk_level=RiskLevel.HIGH,
         requires_approval=True,
@@ -80,7 +90,20 @@ FOUNDATION_TOOL_DEFINITIONS = (
     ToolDefinition(
         name="verify_resolution",
         description="Run a structured verification check against a known incident.",
-        input_schema={"type": "object", "required": ["incident_id", "checks"]},
+        input_schema={
+            "type": "object",
+            "required": ["service", "checks"],
+            "properties": {
+                "service": {"type": "string"},
+                "checks": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": ["service_health", "payment_metrics", "error_logs"],
+                    },
+                },
+            },
+        },
         output_schema={"type": "object"},
         risk_level=RiskLevel.READ_ONLY,
         requires_approval=False,
@@ -95,4 +118,22 @@ FOUNDATION_TOOL_DEFINITIONS = (
     ),
 )
 
+_TOOL_DOMAINS = {
+    "get_logs": "IT",
+    "get_metrics": "IT",
+    "get_recent_deployments": "IT",
+    "inspect_configuration": "IT",
+    "search_documentation": "shared",
+    "run_health_check": "IT",
+    "run_test": "IT",
+    "create_remediation_plan": "shared",
+    "execute_safe_action": "shared",
+    "verify_resolution": "shared",
+    "generate_incident_report": "shared",
+}
+
+FOUNDATION_TOOL_DEFINITIONS: tuple[ToolDefinition, ...] = tuple(
+    definition.model_copy(update={"domain": _TOOL_DOMAINS[definition.name]})
+    for definition in _RAW_FOUNDATION_TOOL_DEFINITIONS
+)
 FOUNDATION_TOOL_CATALOG = ToolCatalog(FOUNDATION_TOOL_DEFINITIONS)

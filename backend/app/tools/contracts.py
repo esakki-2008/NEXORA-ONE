@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from datetime import datetime
+from enum import StrEnum
 from typing import Any
+from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -21,6 +24,34 @@ class ToolDefinition(BaseModel):
     output_schema: dict[str, Any] = Field(default_factory=dict)
     risk_level: RiskLevel
     requires_approval: bool
+    domain: str = Field(default="shared", min_length=1, max_length=80)
+    enabled: bool = True
+
+    @property
+    def tool_name(self) -> str:
+        return self.name
+
+
+class ToolExecutionStatus(StrEnum):
+    SUCCESS = "SUCCESS"
+    FAILED = "FAILED"
+    REJECTED = "REJECTED"
+    TIMEOUT = "TIMEOUT"
+    NOT_AVAILABLE = "NOT_AVAILABLE"
+
+
+class ToolExecutionResult(BaseModel):
+    """Uniform, auditable result returned by every controlled tool."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    tool_name: str
+    status: ToolExecutionStatus
+    result: dict[str, Any] = Field(default_factory=dict)
+    evidence: list[dict[str, Any]] = Field(default_factory=list)
+    timestamp: datetime
+    risk_level: RiskLevel
+    execution_id: UUID = Field(default_factory=uuid4)
 
 
 class ControlledTool(ABC):

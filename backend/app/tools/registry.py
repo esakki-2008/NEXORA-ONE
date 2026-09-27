@@ -32,6 +32,9 @@ class ToolRegistry:
     def list_names(self) -> list[str]:
         return sorted(self._tools)
 
+    def list_definitions(self) -> list[ToolDefinition]:
+        return [self._tools[name].definition for name in sorted(self._tools)]
+
     async def execute(self, name: str, input_data: dict[str, Any]) -> dict[str, Any]:
         """Execute only a registered tool; shell/process access is not exposed."""
 

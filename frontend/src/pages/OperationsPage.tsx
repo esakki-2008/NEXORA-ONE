@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 
+import { getOrchestratorOverview } from "../api/orchestrator";
 import { listIncidents } from "../api/incidents";
 import { ErrorState } from "../components/ErrorState";
 import { Icon } from "../components/Icon";
@@ -9,17 +10,27 @@ import { Panel } from "../components/Panel";
 import { SectionHeading } from "../components/SectionHeading";
 import { StatusBadge } from "../components/StatusBadge";
 import { useAsyncData } from "../hooks/useAsyncData";
+import { formatDateTime, humanize } from "../lib/format";
 import { domainDefinitions, incidentsForDomain } from "../lib/domains";
-import type { Incident } from "../types";
+import type { Incident, OrchestratorOverview } from "../types";
+
+interface OperationsData {
+  incidents: Incident[];
+  orchestrator: OrchestratorOverview | null;
+}
 
 export function OperationsPage() {
-  const loader = useCallback(() => listIncidents(), []);
-  const { data, isLoading, error, reload } = useAsyncData<Incident[]>(loader);
+  const loader = useCallback(async (): Promise<OperationsData> => {
+    const [incidents, overviewResult] = await Promise.all([listIncidents(), getOrchestratorOverview().catch(() => null)]);
+    return { incidents, orchestrator: overviewResult && !Array.isArray(overviewResult) ? overviewResult : null };
+  }, []);
+  const { data, isLoading, error, reload } = useAsyncData<OperationsData>(loader);
 
   if (isLoading && !data) return <LoadingState label="Loading operations sources…" rows={6} />;
   if (error && !data) return <ErrorState title="Operations view is unavailable" description={error} onRetry={reload} />;
 
-  const incidents = data ?? [];
+  const incidents = data?.incidents ?? [];
+  const orchestrator = data?.orchestrator;
 
   return (
     <section className="page-section">
@@ -29,6 +40,10 @@ export function OperationsPage() {
         description="Cross-domain operational posture without splitting the business into separate applications."
         actions={<button className="secondary-button" type="button" onClick={reload} disabled={isLoading}><Icon name="refresh" size={14} /> Refresh operations</button>}
       />
+      <Panel>
+        <SectionHeading eyebrow="CENTRAL ORCHESTRATOR" title="Response posture" description="Runtime status is read from the server-owned orchestrator; missing data is not treated as healthy." action={<StatusBadge value={orchestrator?.status ?? "not-available"} label={orchestrator ? humanize(orchestrator.status) : "Not available"} dot />} />
+        <div className="orchestration-summary"><div><span>Status</span><strong>{orchestrator ? humanize(orchestrator.status) : "Not recorded"}</strong></div><div><span>Active orchestrations</span><strong>{orchestrator ? orchestrator.active_incidents : "—"}</strong></div><div><span>Specialists</span><strong>{orchestrator ? orchestrator.specialists.length : "—"}</strong></div><div><span>Last activity</span><strong>{orchestrator?.last_activity ? formatDateTime(orchestrator.last_activity) : "Not recorded"}</strong></div></div>
+      </Panel>
       <Panel>
         <SectionHeading eyebrow="DOMAIN REGISTER" title="Operational domains" description="Issue counts are derived from the live incident API. A dash means the domain is not connected, not zero." />
         <div className="operations-table-wrap">

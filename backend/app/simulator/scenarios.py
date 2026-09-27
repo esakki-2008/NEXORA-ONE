@@ -398,11 +398,16 @@ class ShopFlowSimulator:
 
     company = "ShopFlow"
 
+    def __init__(self) -> None:
+        self._fixtures: dict[str, ScenarioFixture] = {}
+
     def list_scenarios(self) -> list[ScenarioSummary]:
         return list_scenario_summaries()
 
     def load_scenario(self, scenario_id: str) -> ScenarioFixture:
         try:
-            return _BUILDERS[scenario_id]()
+            if scenario_id not in self._fixtures:
+                self._fixtures[scenario_id] = _BUILDERS[scenario_id]()
+            return self._fixtures[scenario_id].model_copy(deep=True)
         except KeyError as exc:
             raise ScenarioNotFoundError(scenario_id) from exc

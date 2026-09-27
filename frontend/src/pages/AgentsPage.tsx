@@ -1,46 +1,50 @@
+import { useCallback } from "react";
+
+import { listOrchestratorAgents } from "../api/orchestrator";
+import { EmptyState } from "../components/EmptyState";
+import { ErrorState } from "../components/ErrorState";
+import { Icon, type IconName } from "../components/Icon";
+import { LoadingState } from "../components/LoadingState";
 import { PageHeader } from "../components/PageHeader";
 import { Panel } from "../components/Panel";
 import { SectionHeading } from "../components/SectionHeading";
 import { StatusBadge } from "../components/StatusBadge";
-import { Icon, type IconName } from "../components/Icon";
+import { useAsyncData } from "../hooks/useAsyncData";
+import { formatDateTime, humanize } from "../lib/format";
+import type { OrchestratorSpecialist } from "../types";
 
-interface AgentDefinition {
-  name: string;
-  domain: string;
-  icon: IconName;
+const iconByAgent: Record<string, IconName> = {
+  it_operations: "operations",
+  revenue: "business",
+  support: "agents",
+  supply_chain: "layers",
+  contracts: "reports",
+  cloud: "database",
+  data: "activity",
+  compliance: "shield"
+};
+
+function iconFor(agent: OrchestratorSpecialist): IconName {
+  return iconByAgent[agent.name] ?? "agents";
 }
 
-const agents: AgentDefinition[] = [
-  { name: "Orchestrator Agent", domain: "Coordinates bounded specialist work", icon: "command" },
-  { name: "IT Operations Agent", domain: "Incidents, logs, metrics, deployments", icon: "operations" },
-  { name: "Revenue Agent", domain: "Payments, billing, checkout", icon: "business" },
-  { name: "Support Agent", domain: "Tickets, customer issues, knowledge", icon: "agents" },
-  { name: "Supply Chain Agent", domain: "Suppliers, inventory, shipments", icon: "layers" },
-  { name: "Contract Agent", domain: "Obligations, renewals, penalties", icon: "reports" },
-  { name: "Cloud Agent", domain: "Resources, usage, cost anomalies", icon: "database" },
-  { name: "Data Agent", domain: "Pipelines, quality, anomalies", icon: "activity" },
-  { name: "Compliance Agent", domain: "Controls, evidence, gaps", icon: "shield" }
-];
-
 export function AgentsPage() {
+  const loader = useCallback(() => listOrchestratorAgents(), []);
+  const { data, isLoading, error, reload } = useAsyncData<OrchestratorSpecialist[]>(loader);
+
+  if (isLoading && !data) return <LoadingState label="Loading specialist registry…" rows={5} />;
+  if (error && !data) return <ErrorState title="Agent registry unavailable" description={error} onRetry={reload} />;
+
+  const agents = data ?? [];
+
   return (
     <section className="page-section">
-      <PageHeader eyebrow="INTELLIGENCE / AGENT FABRIC" title="Agent directory" description="The future specialist-agent topology is visible here, while every runtime status remains honest about what Phase 2 has configured." meta={<><Icon name="shield" size={13} /> No autonomous agents are running</>} />
+      <PageHeader eyebrow="INTELLIGENCE / AGENT FABRIC" title="Agent directory" description="Eight bounded specialist modules are registered behind the central orchestrator. Runtime status is shown only when returned by the backend." meta={<><Icon name="shield" size={13} /> Server-owned specialist registry</>} actions={<button className="secondary-button" type="button" onClick={reload} disabled={isLoading}><Icon name="refresh" size={14} /> Refresh agents</button>} />
       <Panel>
-        <SectionHeading eyebrow="AGENT ARCHITECTURE" title="Specialist agent boundary" description="These are registered product roles, not fabricated active sessions." action={<StatusBadge value="phase-4" label="Phase 4 boundary" />} />
-        <div className="agent-grid">
-          {agents.map((agent) => (
-            <article className="agent-card" key={agent.name}>
-              <div className="agent-card-top"><span className="agent-icon"><Icon name={agent.icon} size={18} /></span><StatusBadge value="not-configured" label="Not configured" /></div>
-              <h3>{agent.name}</h3>
-              <p>{agent.domain}</p>
-              <div className="agent-meta"><span>Current task</span><strong>Not available</strong></div>
-              <div className="agent-meta"><span>Last activity</span><strong>Not recorded</strong></div>
-            </article>
-          ))}
-        </div>
+        <SectionHeading eyebrow="AGENT ARCHITECTURE" title="Specialist agent boundary" description="Specialists provide domain capabilities; the central orchestrator owns routing, policy, approvals, execution, and resolution." action={<StatusBadge value={agents.length ? "registered" : "not-available"} label={agents.length ? `${agents.length} registered` : "Not available"} />} />
+        {agents.length ? <div className="agent-grid">{agents.map((agent) => <article className="agent-card" key={agent.name}><div className="agent-card-top"><span className="agent-icon"><Icon name={iconFor(agent)} size={18} /></span><StatusBadge value={agent.status} label={humanize(agent.status)} dot /></div><h3>{humanize(agent.name)}</h3><p>{humanize(agent.domain)} · {agent.capabilities.join(", ")}</p><div className="agent-meta"><span>Current task</span><strong>{agent.current_task ? humanize(agent.current_task) : "Not recorded"}</strong></div><div className="agent-meta"><span>Last activity</span><strong>{agent.last_activity ? formatDateTime(agent.last_activity) : "Not recorded"}</strong></div></article>)}</div> : <EmptyState title="No specialist runtime records" description="The backend did not return registered specialist modules. No agent status is inferred in the UI." />}
       </Panel>
-      <div className="source-note"><Icon name="layers" size={15} /> Agent contracts and the state machine are available in the backend foundation. Runtime orchestration is intentionally deferred.</div>
+      <div className="source-note"><Icon name="layers" size={15} /> The model can propose bounded work, but it cannot select permissions, approve actions, execute tools, or declare an incident resolved.</div>
     </section>
   );
 }

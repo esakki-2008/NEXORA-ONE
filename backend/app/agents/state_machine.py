@@ -54,10 +54,20 @@ ALLOWED_TRANSITIONS: Final[dict[AgentState, frozenset[AgentState]]] = {
         }
     ),
     AgentState.REMEDIATION_PROPOSED: frozenset(
-        {AgentState.WAITING_FOR_APPROVAL, AgentState.REQUIRES_HUMAN, AgentState.CANCELLED}
+        {
+            AgentState.WAITING_FOR_APPROVAL,
+            AgentState.FAILED,
+            AgentState.REQUIRES_HUMAN,
+            AgentState.CANCELLED,
+        }
     ),
     AgentState.WAITING_FOR_APPROVAL: frozenset(
-        {AgentState.EXECUTING, AgentState.REQUIRES_HUMAN, AgentState.CANCELLED}
+        {
+            AgentState.EXECUTING,
+            AgentState.FAILED,
+            AgentState.REQUIRES_HUMAN,
+            AgentState.CANCELLED,
+        }
     ),
     AgentState.EXECUTING: frozenset(
         {AgentState.VERIFYING, AgentState.FAILED, AgentState.REQUIRES_HUMAN}

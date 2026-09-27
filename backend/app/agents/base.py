@@ -57,3 +57,6 @@ class AgentDirectory:
 
     def list_names(self) -> list[str]:
         return sorted(self._agents)
+
+    def list_agents(self) -> list[SpecialistAgent]:
+        return [self._agents[name] for name in sorted(self._agents)]

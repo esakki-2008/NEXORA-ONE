@@ -4,7 +4,7 @@
 
 NEXORA ONE is an autonomous enterprise operations AI platform foundation for the Nebius × NVIDIA Global AI Hackathon 2026, Best Apps & Agents track. It is designed for companies whose operational truth is distributed across applications, payments, databases, cloud infrastructure, support, supply chain, deployments, and compliance systems.
 
-Phase 1 establishes the boundaries needed to observe, investigate, understand, correlate, prioritize, plan, request approval, act, verify, and report without pretending that later capabilities already exist. Phase 2 builds the enterprise command center on those boundaries, connecting operational screens to real API and simulator data. Phase 3 adds the real Nebius Token Factory and NVIDIA Nemotron inference boundary with validated structured responses, bounded retries, and observable lifecycle events.
+Phase 1 establishes the boundaries needed to observe, investigate, understand, correlate, prioritize, plan, request approval, act, verify, and report. Phase 2 builds the enterprise command center on those boundaries, connecting operational screens to real API and simulator data. Phase 3 adds the real Nebius Token Factory and NVIDIA Nemotron inference boundary with validated structured responses, bounded retries, and observable lifecycle events. Phase 4 adds the central stateful orchestrator, eight bounded specialists, deterministic policy, approval-gated simulator actions, verification, escalation, and incident reports.
 
 ## Problem
 
@@ -20,7 +20,7 @@ OBSERVE → INVESTIGATE → UNDERSTAND → CORRELATE → PRIORITIZE
 PLAN → REQUEST APPROVAL → ACT → VERIFY → REPORT
 ```
 
-Phase 1 provides the contracts and runnable shell for that flow. Phase 2 provides the functional enterprise command center and connected read surfaces. Phase 3 performs only bounded, evidence-grounded Nemotron analysis: it does not orchestrate agents, execute tools, run shell commands, mutate production, or bypass human approval.
+Phase 1 provides the contracts and runnable shell for that flow. Phase 2 provides the functional enterprise command center and connected read surfaces. Phase 3 performs bounded, evidence-grounded Nemotron analysis. Phase 4 lets the server orchestrate that analysis through an explicit state machine, but keeps the model as an untrusted planner: it cannot set permissions, approve, execute, bypass policy, or declare resolution.
 
 ## Why it matters
 
@@ -71,7 +71,7 @@ The future orchestrator will dispatch to explicitly registered specialist agents
 - Data Agent — pipelines, data quality, anomalies
 - Compliance Agent — controls, evidence, gaps
 
-Phase 1 includes a `SpecialistAgent` contract, `AgentDirectory`, orchestrator dependency boundary, and reusable state machine. No specialist implementation is registered yet.
+Phase 4 registers eight bounded specialist modules through an explicit directory: IT Operations, Revenue, Support, Supply Chain, Contracts, Cloud, Data, and Compliance. The central orchestrator owns deterministic routing, priorities, policy, approvals, action execution, verification, and escalation. See [docs/orchestrator.md](docs/orchestrator.md).
 
 ## Enterprise domains
 
@@ -103,7 +103,7 @@ Provider failures fail closed. Missing configuration, authentication failure, un
 
 ## Security model
 
-Phase 3 preserves the Phase 1/2 controls and adds:
+Phase 4 preserves the Phase 1/2/3 controls and adds:
 
 - environment-only configuration; `.env` is ignored and `.env.example` contains no credential values;
 - `NEBIUS_API_KEY` is server-only and represented by `SecretStr`; it is absent from frontend bundles, responses, events, and provider error messages;
@@ -113,8 +113,11 @@ Phase 3 preserves the Phase 1/2 controls and adds:
 - an allow-listed `ToolRegistry` with no arbitrary shell, subprocess, eval, Python, or model-supplied command execution;
 - bounded provider retries, request timeouts, status-aware failures, and no fake success when configuration or connectivity is missing;
 - observable AI lifecycle events containing only status/source metadata and concise messages;
-- human approval remains required for risky recommendations; Phase 3 has no action executor or approval bypass;
-- explicit verification contracts for proving a controlled action changed the expected state.
+- human approval remains required for risky recommendations; Phase 4 adds only fixed, simulator-scoped action execution;
+- explicit verification contracts and a server-owned verification runner prevent resolution without proof;
+- secret-free orchestration context, explicit transitions, deterministic routing/prioritization, hypothesis lifecycle, escalation, and auditable activity;
+- eight controlled specialists, strict Pydantic tool argument validation, server-side READ_ONLY/LOW/MEDIUM/HIGH policy, idempotent approvals, and safe failure recovery;
+- Command Center, Agents, Operations, Investigation, incident detail, Verification, action register, and report surfaces consume real orchestration endpoints.
 
 See [docs/security.md](docs/security.md).
 
@@ -128,11 +131,11 @@ ShopFlow is a fictional company used for structured development fixtures. The re
 4. Bad Deployment — a recent release introduces errors.
 5. Configuration Mismatch — a configuration change causes failures.
 
-The simulator contains structured services, deployments, configurations, metrics, logs, and transactions. It is not a fake dashboard and does not mutate incident records. Inspect it through `GET /api/simulator/scenarios` and `GET /api/simulator/scenarios/{scenario_id}`.
+The simulator contains structured services, deployments, configurations, metrics, logs, and transactions. Its public fixture API is read-only and never mutates incident records. Phase 4 may mutate an isolated in-memory fixture only through the two approval-gated actions documented in [docs/orchestrator.md](docs/orchestrator.md). Inspect fixtures through `GET /api/simulator/scenarios` and `GET /api/simulator/scenarios/{scenario_id}`.
 
 ## Current phase
 
-**Phase 3 — Nebius + NVIDIA AI Core**
+**Phase 4 — Central Agent Orchestrator**
 
 Phase 1 and Phase 2 remain intact. Phase 3 adds:
 
@@ -151,7 +154,7 @@ Phase 1 and Phase 2 remain intact. Phase 3 adds:
 - provider test control in Settings, backend-sourced AI health, and observable AI lifecycle events;
 - mocked provider tests covering success, retries, authentication, unavailable provider/model, timeout, malformed output, and missing configuration.
 
-Still intentionally not implemented: Phase 4 orchestration, autonomous investigation, specialist-agent execution, tool execution, arbitrary shell/subprocess/Python execution, production mutation, rollback, approval workflows, approval bypass, verification execution, fake metrics, fabricated AI activity, or production authentication.
+Still intentionally bounded or not implemented: production mutation, arbitrary shell/subprocess/Python execution, model-generated commands, approval bypass, fabricated evidence/activity/health, autonomous operation without an operator policy, durable orchestration persistence, production authentication/authorization, and an alternate AI provider. ShopFlow actions are synthetic in-memory demonstrations only.
 
 ## Ten-phase roadmap
 
@@ -209,7 +212,7 @@ Copy `.env.example` to `.env`. The important variables are:
 | `NEBIUS_BASE_URL` | Nebius OpenAI-compatible base URL, normally including `/v1/` |
 | `NEBIUS_TIMEOUT_SECONDS` | Provider request timeout; defaults to `60` |
 | `NEBIUS_MAX_RETRIES` | Bounded transient retry count; defaults to `2` |
-| `TAVILY_API_KEY` | Reserved for a future bounded research tool; unused in Phase 3 |
+| `TAVILY_API_KEY` | Reserved for a future bounded research tool; unused in Phase 4 |
 | `CORS_ORIGINS` | Comma-separated browser origins |
 
 Never commit `.env` or credentials.
@@ -232,8 +235,21 @@ Never commit `.env` or credentials.
 | `POST` | `/api/ai/test` | Make a real bounded structured Nemotron verification request |
 | `POST` | `/api/ai/analyze` | Analyze one live incident or one synthetic ShopFlow scenario |
 | `GET` | `/api/ai/activity` | Return concise observable AI lifecycle events; optionally filter by incident |
+| `GET` | `/api/orchestrator/overview` | Return server-owned central orchestrator posture |
+| `GET` | `/api/orchestrator/agents` | List eight registered specialist modules |
+| `GET` | `/api/orchestrator/tools` | List enabled allow-listed tool metadata |
+| `POST` | `/api/orchestrator/incidents/{id}/start` | Start live or explicit synthetic orchestration |
+| `GET` | `/api/orchestrator/incidents/{id}` | Retrieve secret-free orchestration context |
+| `GET` | `/api/orchestrator/incidents/{id}/activity` | Retrieve orchestration audit timeline |
+| `GET` | `/api/orchestrator/incidents/{id}/hypotheses` | Retrieve hypothesis lifecycle records |
+| `POST` | `/api/orchestrator/incidents/{id}/cancel` | Cancel an active workflow without executing a tool |
+| `GET` | `/api/orchestrator/approvals` | List approval requests |
+| `POST` | `/api/orchestrator/approvals/{id}/approve` | Approve through server policy and execute a fixed simulator action |
+| `POST` | `/api/orchestrator/approvals/{id}/reject` | Reject and escalate without executing |
+| `GET` | `/api/orchestrator/actions` | List controlled action executions |
+| `GET` | `/api/orchestrator/verifications` | List verification results |
 
-The Phase 3 frontend uses the AI health and activity surfaces without receiving credentials. The provider test and analysis routes never execute tools or actions. Future endpoints such as investigate, approve, execute, and verify are deliberately not registered yet.
+The Phase 4 frontend uses the AI health, orchestrator, approval, action, and verification surfaces without receiving credentials. The provider remains the existing Phase 3 Nebius/Nemotron service. The backend owns approvals, execution, idempotency, and resolution; the frontend only requests and renders those decisions.
 
 ## Testing and checks
 

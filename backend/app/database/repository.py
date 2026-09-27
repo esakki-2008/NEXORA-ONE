@@ -30,6 +30,8 @@ class IncidentRepository(Protocol):
 
     def get_incident(self, incident_id: UUID) -> Incident | None: ...
 
+    def update_incident(self, incident: Incident) -> Incident: ...
+
     def add_activity(self, event: ActivityEvent) -> ActivityEvent: ...
 
     def list_activity(self, incident_id: UUID) -> list[ActivityEvent]: ...
@@ -37,6 +39,10 @@ class IncidentRepository(Protocol):
     def list_evidence(self, incident_id: UUID) -> list[Evidence]: ...
 
     def list_hypotheses(self, incident_id: UUID) -> list[Hypothesis]: ...
+
+    def add_hypothesis(self, hypothesis: Hypothesis) -> Hypothesis: ...
+
+    def add_report(self, report: IncidentReport) -> IncidentReport: ...
 
     def get_report(self, incident_id: UUID) -> IncidentReport | None: ...
 
@@ -81,6 +87,13 @@ class InMemoryIncidentRepository:
         with self._lock:
             incident = self._incidents.get(incident_id)
             return self._copy(incident) if incident is not None else None
+
+    def update_incident(self, incident: Incident) -> Incident:
+        with self._lock:
+            if incident.id not in self._incidents:
+                raise KeyError(f"Incident {incident.id} does not exist")
+            self._incidents[incident.id] = self._copy(incident)
+            return self._copy(incident)
 
     def add_activity(self, event: ActivityEvent) -> ActivityEvent:
         with self._lock:

@@ -8,6 +8,7 @@ import { ErrorState } from "../components/ErrorState";
 import { Icon } from "../components/Icon";
 import { LoadingState } from "../components/LoadingState";
 import { PageHeader } from "../components/PageHeader";
+import { OrchestrationPanel } from "../components/OrchestrationPanel";
 import { Panel } from "../components/Panel";
 import { SectionHeading } from "../components/SectionHeading";
 import { SeverityBadge, StatusBadge } from "../components/StatusBadge";
@@ -68,6 +69,8 @@ export function IncidentDetailPage() {
       />
       <div className="detail-badges detail-badges-page"><SeverityBadge severity={incident.severity} /><StatusBadge value={incident.status} dot /><StatusBadge value={incident.agent_state} label={humanize(incident.agent_state)} /></div>
 
+      <OrchestrationPanel incidentId={incident.id} />
+
       <div className="metric-grid detail-metric-grid">
         <div className="metric-card"><span className="eyebrow">AFFECTED SERVICE</span><strong className="metric-text">{incident.service}</strong><span className="muted">From incident intake</span></div>
         <div className="metric-card metric-tone-info"><span className="eyebrow">CURRENT AI STAGE</span><strong className="metric-text">{humanize(incident.agent_state)}</strong><span className="muted">State recorded by backend</span></div>
@@ -88,7 +91,7 @@ export function IncidentDetailPage() {
       </div>
 
       <Panel className="stage-panel">
-        <SectionHeading eyebrow="CONTROL STATE" title="Investigation lifecycle" description="The state machine is visualized, but future states remain pending until the corresponding workflow exists." />
+        <SectionHeading eyebrow="CONTROL STATE" title="Investigation lifecycle" description="The explicit backend state machine records each permitted transition; unresolved states remain visible until the server moves the incident safely." />
         <ol className="state-timeline">
           {stageSequence.map((stage, index) => {
             const isCurrent = index === stageIndex;

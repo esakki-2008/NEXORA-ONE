@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 
 import { getAIActivity, getAIHealth } from "../api/ai";
+import { getOrchestratorOverview } from "../api/orchestrator";
 import { getHealth } from "../api/health";
 import { listIncidentActivity, listIncidents } from "../api/incidents";
 import { listScenarioSummaries } from "../api/simulator";
@@ -18,7 +19,7 @@ import { SectionHeading } from "../components/SectionHeading";
 import { StatusBadge } from "../components/StatusBadge";
 import { useAsyncData } from "../hooks/useAsyncData";
 import { formatDateTime } from "../lib/format";
-import type { ActivityEvent, AIHealthResponse, HealthResponse, Incident, ScenarioSummary } from "../types";
+import type { ActivityEvent, AIHealthResponse, HealthResponse, Incident, OrchestratorOverview, ScenarioSummary } from "../types";
 
 interface CommandCenterData {
   incidents: Incident[];
@@ -26,15 +27,17 @@ interface CommandCenterData {
   scenarios: ScenarioSummary[] | null;
   health: HealthResponse | null;
   aiHealth: AIHealthResponse | null;
+  orchestrator: OrchestratorOverview | null;
 }
 
 async function loadCommandCenter(): Promise<CommandCenterData> {
-  const [healthResult, incidentsResult, scenariosResult, aiHealthResult, aiActivityResult] = await Promise.allSettled([
+  const [healthResult, incidentsResult, scenariosResult, aiHealthResult, aiActivityResult, orchestratorResult] = await Promise.allSettled([
     getHealth(),
     listIncidents(),
     listScenarioSummaries(),
     getAIHealth(),
-    getAIActivity()
+    getAIActivity(),
+    getOrchestratorOverview()
   ]);
 
   if (incidentsResult.status === "rejected") throw incidentsResult.reason;
@@ -59,7 +62,8 @@ async function loadCommandCenter(): Promise<CommandCenterData> {
     activity,
     scenarios: scenariosResult.status === "fulfilled" ? scenariosResult.value : null,
     health: healthResult.status === "fulfilled" ? healthResult.value : null,
-    aiHealth: aiHealthResult.status === "fulfilled" ? aiHealthResult.value : null
+    aiHealth: aiHealthResult.status === "fulfilled" && !Array.isArray(aiHealthResult.value) ? aiHealthResult.value : null,
+    orchestrator: orchestratorResult.status === "fulfilled" && !Array.isArray(orchestratorResult.value) ? orchestratorResult.value : null
   };
 }
 
@@ -109,6 +113,11 @@ export function CommandCenterPage() {
         <MetricCard label="ShopFlow scenarios" value={scenarioCount ?? "—"} detail={scenarioCount === null ? "Simulator unavailable" : "Structured fixtures available"} tone="info" icon={<Icon name="layers" size={16} />} />
         <MetricCard label="Business health" value="NOT SCORED" detail="No domain telemetry in Phase 2" tone="default" icon={<Icon name="business" size={16} />} />
       </div>
+
+      <Panel>
+        <SectionHeading eyebrow="CENTRAL ORCHESTRATOR" title="Response coordination" description="The Command Center reads server-owned orchestration status without inferring activity from missing records." action={<StatusBadge value={data?.orchestrator?.status ?? "not-available"} label={data?.orchestrator ? data.orchestrator.status : "Not available"} dot />} />
+        <div className="orchestration-summary"><div><span>Status</span><strong>{data?.orchestrator ? data.orchestrator.status : "Not recorded"}</strong></div><div><span>Active incidents</span><strong>{data?.orchestrator ? data.orchestrator.active_incidents : "—"}</strong></div><div><span>Specialists</span><strong>{data?.orchestrator ? data.orchestrator.specialists.length : "—"}</strong></div><div><span>Last activity</span><strong>{data?.orchestrator?.last_activity ? formatDateTime(data.orchestrator.last_activity) : "Not recorded"}</strong></div></div>
+      </Panel>
 
       <div className="command-grid command-grid-primary">
         <Panel className="panel-span-two">

@@ -184,7 +184,18 @@ class AIService:
             evidence = self.repository.list_evidence(request.incident_id)
             hypotheses = self.repository.list_hypotheses(request.incident_id)
             activity = self.repository.list_activity(request.incident_id)
-            evidence_records = [item.model_dump(mode="json") for item in evidence]
+            evidence_records = [
+                {
+                    "id": str(item.id),
+                    "incident_id": str(item.incident_id),
+                    "type": item.type.value,
+                    "source": item.source,
+                    "timestamp": item.timestamp.isoformat(),
+                    "summary": item.summary,
+                    "relevance": item.relevance,
+                }
+                for item in evidence
+            ]
             return (
                 incident.id,
                 "live_incident",

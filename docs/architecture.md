@@ -1,13 +1,13 @@
 # NEXORA ONE architecture
 
-Phase 3 preserves the Phase 1 foundation and Phase 2 Command Center while adding a server-only, validated Nebius/NVIDIA inference boundary.
+Phase 4 preserves the Phase 1 foundation, Phase 2 Command Center, and Phase 3 server-only Nebius/NVIDIA inference boundary while adding a stateful, policy-controlled central orchestrator.
 
 ## Design goals
 
 1. Keep domain models independent from HTTP, model vendors, and storage engines.
 2. Make every agent, tool, action, and verification step explicit and auditable.
 3. Prefer a bounded failure over fabricated AI output or an unapproved action.
-4. Make Phase 3 provider integration additive rather than a rewrite.
+4. Make Phase 3 provider integration and Phase 4 orchestration additive rather than a rewrite.
 
 ## Backend boundaries
 
@@ -54,7 +54,7 @@ The provider requests JSON mode, handles authentication/model/provider/timeout/r
 
 ### Agent boundary
 
-`SpecialistAgent` is an abstract contract. `AgentDirectory` is an explicit registry. `AgentStateMachine` enforces the lifecycle:
+`SpecialistAgent` is an abstract contract. `AgentDirectory` is an explicit registry containing eight bounded domain modules. `AgentOrchestrator` owns routing, priorities, evidence validation, policy, approval, execution, verification, and escalation. `AgentStateMachine` enforces the lifecycle:
 
 ```text
 IDLE → INCIDENT_RECEIVED → OBSERVING → INVESTIGATING
@@ -62,11 +62,11 @@ IDLE → INCIDENT_RECEIVED → OBSERVING → INVESTIGATING
      → WAITING_FOR_APPROVAL → EXECUTING → VERIFYING → RESOLVED
 ```
 
-`FAILED`, `CANCELLED`, and `REQUIRES_HUMAN` are explicit terminal outcomes in Phase 1. No implicit retry or resume behavior is allowed.
+`FAILED`, `CANCELLED`, and `REQUIRES_HUMAN` are explicit safe outcomes. No implicit retry, approval bypass, or resume behavior is allowed. See [orchestrator.md](orchestrator.md) for the Phase 4 context, policy, simulator, and API details.
 
 ### Tool boundary
 
-Tool definitions carry input/output schemas, risk, and approval requirements. Only concrete `ControlledTool` instances can be registered and executed. The registry has no API for arbitrary shell commands, subprocesses, eval, or dynamic imports. Metadata for future tools is separate from executable implementations.
+Tool definitions carry input/output schemas, domain, enabled state, risk, and approval requirements. `ToolRuntime` validates every call and applies server policy before a concrete `ControlledTool` receives data. The registry has no API for arbitrary shell commands, subprocesses, eval, or dynamic imports. Phase 4 execution is limited to read-only ShopFlow evidence and the fixed `restart_payment_service` / `rollback_simulated_deployment` simulator actions.
 
 ### Verification boundary
 
@@ -83,7 +83,7 @@ The frontend is a Vite single-page app:
 - `pages/` contains route-level command center, monitor, intelligence, action, reporting, and system surfaces;
 - `types.ts` mirrors only public response contracts and simulator records.
 
-Phase 2 uses real incident, activity, evidence, hypothesis, report, health, and simulator endpoints. Phase 3 extends the existing UI with backend-sourced AI health, a verified-only `AI CONNECTED` status, a safe Settings provider test, and the AI lifecycle activity feed. When a source is absent, the UI says so instead of manufacturing a score, provider connection, recommendation, or AI event. Simulator observations carry a visible synthetic/demo label and do not become live incident records.
+Phase 2 uses real incident, activity, evidence, hypothesis, report, health, and simulator endpoints. Phase 3 extends the UI with backend-sourced AI health and lifecycle activity. Phase 4 adds server-owned orchestration posture, specialist status, approval details, action records, verification records, and incident/investigation controls. When a source is absent, the UI says so instead of manufacturing a score, provider connection, recommendation, activity, or resolution. Simulator observations carry a visible synthetic/demo label and do not become live incident records.
 
 In development, Vite proxies `/health` and `/api` to the backend. Browser code never calls localhost directly; it calls relative paths so the same build works behind a preview host or reverse proxy.
 
@@ -91,8 +91,8 @@ In development, Vite proxies `/health` and `/api` to the backend. Browser code n
 
 - Phase 2 can add dashboard query services without changing incident records.
 - Phase 3 now provides the real Nebius/Nemotron adapter, validated response contract, health/test/analyze/activity routes, and mocked provider tests.
-- Phase 4 can register specialist agents and orchestrator policies.
-- Phase 5 can persist evidence and hypotheses through repository extensions.
+- Phase 4 now registers specialist agents, orchestrator policies, approval APIs, simulator execution, verification, escalation, and report generation.
+- Phase 5 can add durable orchestration snapshots, authenticated operator identity, richer evidence adapters, and post-incident learning without weakening server policy.
 - Phase 6 can add domain-specific repositories and tools.
 - Phase 7 can enable only approved `ControlledTool` actions.
 - Phase 8 can persist verification records and report generation.

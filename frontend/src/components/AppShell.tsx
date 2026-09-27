@@ -178,8 +178,8 @@ export function AppShell() {
 
         <div className="sidebar-footer">
           <div className="foundation-card">
-            <span className="eyebrow">PHASE 2 COMMAND CENTER</span>
-            <p>Live intake is connected. Investigation and action remain explicitly bounded.</p>
+            <span className="eyebrow">PHASE 4 ORCHESTRATOR</span>
+            <p>State, policy, approvals, simulator actions, and verification remain server-controlled.</p>
           </div>
           <div className="operator-row">
             <span className="operator-avatar">OP</span>
