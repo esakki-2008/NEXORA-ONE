@@ -39,6 +39,7 @@ NEXORA ONE treats an AI model as an untrusted planner, not as an operating-syste
 - Revenue exposure, customer counts, cloud cost, supply-chain counts, data-quality ratios, contract days, and compliance findings are deterministic simulator estimates or source-derived values. Currency is preserved; mixed currencies do not receive an invented conversion.
 - Cross-domain records are deterministic related-signal relationships with evidence identifiers and non-causation explanations. Operations never upgrades correlation to causation or treats AI-generated rankings as authoritative.
 - `POST /api/operations/signals/{id}/investigate` can only create/open an incident and call the existing Phase 5 `InvestigationService`; it cannot call tools, approve actions, execute actions, mutate production state, or mark an incident resolved.
+- Operations preserves the Phase 5 request/incident idempotency boundary: request IDs are bound to the originating operations signal, and repeated signal requests reuse the existing incident/investigation rather than creating duplicate work.
 - The frontend's Investigate control sends a bounded context request only. It has no credentials, shell access, operational command execution, direct Phase 4 action endpoint, or resolution control.
 - No uncontrolled polling loop or background refresh worker is created. Refresh is explicit and bounded through GET/POST snapshot requests.
 

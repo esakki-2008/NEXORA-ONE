@@ -46,11 +46,13 @@ class InvestigationService:
         scenario_id: str | None = None,
         request_id: str | None = None,
         auto_handoff: bool = True,
+        operations_signal_id: str | None = None,
     ) -> InvestigationContext:
         context = await self.engine.start(
             incident_id,
             scenario_id=scenario_id,
             request_id=request_id,
+            operations_signal_id=operations_signal_id,
         )
         if auto_handoff and context.orchestrator_handoff.status is InvestigationHandoffStatus.READY:
             return await self.handoff(context.investigation_id)
@@ -58,6 +60,11 @@ class InvestigationService:
 
     def get(self, investigation_id: UUID) -> InvestigationContext:
         return self.store.require(investigation_id)
+
+    def get_by_request(self, request_id: str) -> InvestigationContext | None:
+        """Return an existing request-bound context for idempotent callers."""
+
+        return self.store.get_by_request(request_id)
 
     def get_for_incident(self, incident_id: UUID) -> InvestigationContext:
         context = self.store.get_by_incident(incident_id)

@@ -186,6 +186,32 @@ def test_operations_signal_opens_phase5_investigation_without_action_execution(
     assert handoff_body["incident"]["status"] != "resolved"
 
 
+def test_operations_investigation_request_is_idempotent(
+    client: TestClient,
+) -> None:
+    signal = next(
+        item
+        for item in client.get("/api/operations/signals?scenario_id=payment-failure").json()
+        if item["domain"] == "REVENUE"
+    )
+    request = {
+        "scenario_id": "payment-failure",
+        "request_id": "operations-idempotency-001",
+        "auto_handoff": False,
+    }
+    first = client.post(
+        f"/api/operations/signals/{signal['signal_id']}/investigate", json=request
+    )
+    second = client.post(
+        f"/api/operations/signals/{signal['signal_id']}/investigate", json=request
+    )
+
+    assert first.status_code == 202
+    assert second.status_code == 202
+    assert second.json()["incident_id"] == first.json()["incident_id"]
+    assert second.json()["investigation_id"] == first.json()["investigation_id"]
+
+
 def test_operations_rejects_invalid_financial_values_and_domains() -> None:
     source = SourceMetadata(
         source_type=SourceType.SIMULATOR,

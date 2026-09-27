@@ -100,6 +100,7 @@ class InvestigationEngine:
         *,
         scenario_id: str | None = None,
         request_id: str | None = None,
+        operations_signal_id: str | None = None,
     ) -> InvestigationContext:
         incident = self.repository.get_incident(incident_id)
         if incident is None:
@@ -131,6 +132,7 @@ class InvestigationEngine:
                 scenario_id=scenario_id,
                 status=InvestigationStatus.CREATED,
                 request_id=request_id,
+                operations_signal_id=operations_signal_id,
             )
             self.store.save(context)
             self._record(context, "investigation.created", "Investigation context created")

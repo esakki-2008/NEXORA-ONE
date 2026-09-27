@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from threading import RLock
 from typing import Literal, cast
 from uuid import UUID
 
@@ -100,6 +101,8 @@ class OperationsService:
         self.simulation_runtime = simulation_runtime
         self.incident_service = incident_service
         self.investigation_service = investigation_service
+        self._signal_incidents: dict[tuple[str, str], UUID] = {}
+        self._signal_incidents_lock = RLock()
 
     def snapshot(
         self,
@@ -317,38 +320,57 @@ class OperationsService:
                 "A simulator scenario_id is required to open a controlled investigation"
             )
 
-        incident_id = signal.related_incident_id
+        existing_request = (
+            self.investigation_service.get_by_request(request.request_id)
+            if request.request_id is not None
+            else None
+        )
+        incident_id: UUID | None = None
+        if existing_request is not None:
+            if existing_request.operations_signal_id != signal.signal_id:
+                raise OperationsValidationError(
+                    "Investigation request_id is already bound to another operations signal"
+                )
+            incident_id = existing_request.incident_id
+        else:
+            key = (scenario_id or "", signal.signal_id)
+            with self._signal_incidents_lock:
+                incident_id = self._signal_incidents.get(key) or signal.related_incident_id
+                if incident_id is None:
+                    created = self.incident_service.create_incident(
+                        IncidentCreate(
+                            title=signal.title,
+                            description=(
+                                f"{signal.summary} Source: SIMULATED / CONTROLLED DEMONSTRATION."
+                                if signal.simulator
+                                else signal.summary
+                            ),
+                            severity=signal.severity,
+                            service=signal.related_service or signal.title,
+                        )
+                    )
+                    incident_id = created.id
+                    self.repository.add_activity(
+                        ActivityEvent(
+                            incident_id=incident_id,
+                            event_type="operations.investigation.requested",
+                            message="Operational signal opened a Phase 5 investigation.",
+                            metadata={
+                                "signal_id": signal.signal_id,
+                                "source": signal.source.source_type.value,
+                                "simulator": str(signal.simulator).lower(),
+                            },
+                        )
+                    )
+                self._signal_incidents[key] = incident_id
         if incident_id is None:
-            created = self.incident_service.create_incident(
-                IncidentCreate(
-                    title=signal.title,
-                    description=(
-                        f"{signal.summary} Source: SIMULATED / CONTROLLED DEMONSTRATION."
-                        if signal.simulator
-                        else signal.summary
-                    ),
-                    severity=signal.severity,
-                    service=signal.related_service or signal.title,
-                )
-            )
-            incident_id = created.id
-            self.repository.add_activity(
-                ActivityEvent(
-                    incident_id=incident_id,
-                    event_type="operations.investigation.requested",
-                    message="Operational signal opened a Phase 5 investigation.",
-                    metadata={
-                        "signal_id": signal.signal_id,
-                        "source": signal.source.source_type.value,
-                        "simulator": str(signal.simulator).lower(),
-                    },
-                )
-            )
+            raise OperationsValidationError("Could not resolve an incident for the signal")
         context = await self.investigation_service.start(
             incident_id,
             scenario_id=scenario_id,
             request_id=request.request_id,
             auto_handoff=request.auto_handoff,
+            operations_signal_id=signal.signal_id,
         )
         return InvestigationLaunch(
             signal_id=signal.signal_id,

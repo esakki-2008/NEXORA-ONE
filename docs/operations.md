@@ -115,7 +115,7 @@ GET /api/operations/domains/REVENUE?scenario_id=payment-failure
 # Revenue metrics, payment signal, impact, provenance, and related correlations.
 ```
 
-`POST /api/operations/signals/{id}/investigate` creates a bounded incident record only when a simulator signal does not already have an incident, then calls `InvestigationService.start()`. It never calls a tool or action executor. A later handoff calls the existing Phase 4 `AgentOrchestrator` through Phase 5; approval, risk policy, controlled action, verification, and resolution remain outside Operations.
+`POST /api/operations/signals/{id}/investigate` creates or reuses a bounded incident record, binds an optional request ID to that operations signal, and then calls `InvestigationService.start()`. Repeated requests reuse the existing incident/investigation. It never calls a tool or action executor. A later handoff calls the existing Phase 4 `AgentOrchestrator` through Phase 5; approval, risk policy, controlled action, verification, and resolution remain outside Operations.
 
 ## Frontend
 

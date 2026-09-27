@@ -188,6 +188,7 @@ class InvestigationContext(BaseModel):
     ai_summary: str | None = Field(default=None, max_length=5_000)
     orchestrator_handoff: InvestigationHandoff = Field(default_factory=InvestigationHandoff)
     request_id: str | None = Field(default=None, max_length=160)
+    operations_signal_id: str | None = Field(default=None, max_length=240)
     created_at: datetime = Field(default_factory=utc_now)
     updated_at: datetime = Field(default_factory=utc_now)
 
