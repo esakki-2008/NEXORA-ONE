@@ -62,7 +62,13 @@ export interface ActivityEvent {
   metadata: Record<string, unknown>;
 }
 
-export interface AIActivityEvent extends ActivityEvent {}
+export interface AIActivityEvent extends ActivityEvent {
+  provider: "nebius";
+  model: string;
+  purpose: string;
+  status: string;
+  context: string;
+}
 
 export type AIHealthStatus =
   | "configured"

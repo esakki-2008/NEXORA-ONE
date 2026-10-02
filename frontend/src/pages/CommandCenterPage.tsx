@@ -121,12 +121,13 @@ export function CommandCenterPage() {
         eyebrow="NEXORA ONE / COMMAND CENTER"
         title="Enterprise Operations Command Center"
         description="AI-powered operational visibility across your business, grounded in the records and simulator sources currently connected."
-        meta={<><Icon name="clock" size={13} /> Last updated {updatedAt ? formatDateTime(updatedAt) : "not available"} <span className="meta-separator">·</span> Phase 6 operations intelligence</>}
+        meta={<><Icon name="clock" size={13} /> Last updated {updatedAt ? formatDateTime(updatedAt) : "not available"} <span className="meta-separator">·</span> Phase 10 release view</>}
         actions={<div className="page-header-actions"><Link className="primary-button" to="/remediation"><Icon name="remediation" size={14} /> Controlled actions</Link><button className="secondary-button" type="button" onClick={reload} disabled={isLoading}><Icon name="refresh" size={14} /> {isLoading ? "Refreshing…" : "Refresh command center"}</button></div>}
       />
 
       {error ? <div className="inline-alert"><Icon name="incidents" size={15} /> Some optional sources could not be loaded. Values below remain limited to successful responses.</div> : null}
 
+      <div className="release-boundary-note">Reference release view · server-side security controls active · simulator data remains <strong>SIMULATED / CONTROLLED DEMONSTRATION</strong></div>
       <div className="metric-grid metric-grid-command">
         <MetricCard label="Active incidents" value={activeIncidents.length} detail="Live incident intake" tone={activeIncidents.length ? "warning" : "success"} icon={<Icon name="incidents" size={16} />} />
         <MetricCard label="Critical issues" value={criticalCount} detail="Recorded critical severity" tone={criticalCount ? "critical" : "default"} icon={<Icon name="activity" size={16} />} />
@@ -152,7 +153,7 @@ export function CommandCenterPage() {
       </Panel>
 
       <Panel>
-        <SectionHeading eyebrow="PHASE 6 ENTERPRISE STATUS" title="Operational intelligence" description="The Command Center now reads the unified operations snapshot while retaining the Phase 4 orchestrator and Phase 5 investigation boundaries." action={<StatusBadge value={data?.operations?.simulator ? "simulator" : "source-boundary"} label={data?.operations?.simulator ? "Simulated demo" : "Source boundary"} dot />} />
+        <SectionHeading eyebrow="ENTERPRISE OPERATIONS" title="Operational intelligence" description="The Command Center reads the unified operations snapshot while retaining the orchestrator, investigation, approval, action, verification, and report boundaries." action={<StatusBadge value={data?.operations?.simulator ? "simulator" : "source-boundary"} label={data?.operations?.simulator ? "Simulated demo" : "Source boundary"} dot />} />
         {data?.operations ? (
           <>
             <OperationsDomainHealthGrid domains={data.operations.domains} />
@@ -196,7 +197,7 @@ export function CommandCenterPage() {
               <div className="scenario-row" key={scenario.scenario_id}>
                 <div><StatusBadge value={scenario.severity} dot /><strong>{scenario.name}</strong></div>
                 <span>{scenario.description}</span>
-                <span className="muted scenario-source">Synthetic/demo data · simulator fixture</span>
+                <span className="muted scenario-source">SIMULATED / CONTROLLED DEMONSTRATION · simulator fixture</span>
               </div>
             ))}
           </div>

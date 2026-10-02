@@ -183,6 +183,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .activity-title-row strong { color: var(--text-soft); font-size: 11px; font-weight: 550; line-height: 1.4; }
 .activity-title-row time { flex: 0 0 auto; color: var(--muted); font-size: 9px; }
 .activity-type { display: block; margin-top: 5px; color: var(--subtle); font-family: "SFMono-Regular", Consolas, monospace; font-size: 9px; }
+.activity-context { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; }
+.release-boundary-note { margin-bottom: 14px; padding: 10px 12px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); font-size: 11px; }
+.release-boundary-note strong { color: var(--amber); font-family: "SFMono-Regular", Consolas, monospace; font-size: 10px; letter-spacing: .04em; }
 .activity-timeline-compact { max-height: 310px; overflow-y: auto; }
 
 .empty-state { padding: 48px 24px; text-align: center; }

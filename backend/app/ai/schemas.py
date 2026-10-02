@@ -183,6 +183,8 @@ class AITestResponse(BaseModel):
 
 
 class AIActivityEvent(BaseModel):
+    """Safe lifecycle telemetry; never private model reasoning or credentials."""
+
     model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     id: UUID = Field(default_factory=uuid4)
@@ -193,6 +195,11 @@ class AIActivityEvent(BaseModel):
         pattern=r"^[a-z0-9][a-z0-9._:-]{1,63}$",
     )
     incident_id: UUID | None = None
+    provider: Literal["nebius"] = "nebius"
+    model: str = Field(default="not configured", min_length=1, max_length=240)
+    purpose: str = Field(default="operations_analysis", min_length=1, max_length=120)
+    status: str = Field(default="observed", min_length=1, max_length=80)
+    context: str = Field(default="global", min_length=1, max_length=240)
     event_type: str = Field(min_length=1, max_length=100)
     message: str = Field(min_length=1, max_length=500)
     created_at: datetime

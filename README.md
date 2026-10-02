@@ -4,7 +4,7 @@
 
 NEXORA ONE is an autonomous enterprise operations AI platform foundation for the Nebius × NVIDIA Global AI Hackathon 2026, Best Apps & Agents track. It is designed for companies whose operational truth is distributed across applications, payments, databases, cloud infrastructure, support, supply chain, deployments, and compliance systems.
 
-Phase 1 establishes the boundaries needed to observe, investigate, understand, correlate, prioritize, plan, request approval, act, verify, and report. Phase 2 builds the enterprise command center on those boundaries, connecting operational screens to real API and simulator data. Phase 3 adds the real Nebius Token Factory and NVIDIA Nemotron inference boundary with validated structured responses, bounded retries, and observable lifecycle events. Phase 4 adds the central stateful orchestrator, eight bounded specialists, deterministic policy, approval-gated simulator actions, verification, escalation, and incident reports. Phase 5 adds evidence intelligence: provenance-preserving collection, deterministic correlation, server-scored hypotheses, confidence factors, gaps, root-cause candidates, timeline, and guarded handoff back to the Phase 4 orchestrator. Phase 6 adds a unified enterprise operations intelligence layer across IT, revenue, support, supply chain, contracts, cloud, data, and compliance without creating separate domain applications or a second action path. Phase 7 adds a single controlled autonomous-action plane: seven allow-listed ShopFlow simulator actions, server-calculated risk, immutable fingerprints, human approval, bounded execution, rollback, verification, idempotency, audit chaining, and report-integrated resolution. Phase 8 extends that verification boundary into a strongly typed reliability engine with explicit lifecycle states, deterministic expected-versus-actual checks, provenance-aware evidence, bounded retries, recovery/rollback verification, human escalation, and a strict resolution proof gate. **Phase 9 hardens every server boundary with reference authentication, explicit RBAC, tenant isolation, AI/evidence validation, SSRF and request limits, structured security events, integrity checks, safe errors, rate limits, and negative security coverage.**
+Phase 1 establishes the boundaries needed to observe, investigate, understand, correlate, prioritize, plan, request approval, act, verify, and report. Phase 2 builds the enterprise command center on those boundaries, connecting operational screens to real API and simulator data. Phase 3 adds the real Nebius Token Factory and NVIDIA Nemotron inference boundary with validated structured responses, bounded retries, and observable lifecycle events. Phase 4 adds the central stateful orchestrator, eight bounded specialists, deterministic policy, approval-gated simulator actions, verification, escalation, and incident reports. Phase 5 adds evidence intelligence: provenance-preserving collection, deterministic correlation, server-scored hypotheses, confidence factors, gaps, root-cause candidates, timeline, and guarded handoff back to the Phase 4 orchestrator. Phase 6 adds a unified enterprise operations intelligence layer across IT, revenue, support, supply chain, contracts, cloud, data, and compliance without creating separate domain applications or a second action path. Phase 7 adds a single controlled autonomous-action plane: seven allow-listed ShopFlow simulator actions, server-calculated risk, immutable fingerprints, human approval, bounded execution, rollback, verification, idempotency, audit chaining, and report-integrated resolution. Phase 8 extends that verification boundary into a strongly typed reliability engine with explicit lifecycle states, deterministic expected-versus-actual checks, provenance-aware evidence, bounded retries, recovery/rollback verification, human escalation, and a strict resolution proof gate. Phase 9 hardens every server boundary with reference authentication, explicit RBAC, tenant isolation, AI/evidence validation, SSRF and request limits, structured security events, integrity checks, safe errors, rate limits, and negative security coverage. **Phase 10 freezes those controls for a final hackathon release, verifies the complete controlled ShopFlow path, documents real runtime verification through Nebius Token Factory and NVIDIA Nemotron, and audits the public submission surface without claiming production readiness.**
 
 ## Problem
 
@@ -20,7 +20,7 @@ OBSERVE → INVESTIGATE → UNDERSTAND → CORRELATE → PRIORITIZE
 PLAN → REQUEST APPROVAL → ACT → VERIFY → REPORT
 ```
 
-Phase 1 provides the contracts and runnable shell for that flow. Phase 2 provides the functional enterprise command center and connected read surfaces. Phase 3 performs bounded, evidence-grounded Nemotron analysis. Phase 4 lets the server orchestrate that analysis through an explicit state machine, but keeps the model as an untrusted planner: it cannot set permissions, approve, execute, bypass policy, or declare resolution. Phase 5 makes investigation independently auditable while preserving the same server-owned approval, controlled-action, verification, and resolution boundaries. Phase 7 makes the action boundary explicit and reviewable: an AI recommendation can become only a server-validated proposal, and a verified simulator outcome is required before resolution.
+Phase 1 provides the contracts and runnable shell for that flow. Phase 2 provides the functional enterprise command center and connected read surfaces. Phase 3 performs bounded, evidence-grounded Nemotron analysis. Phase 4 lets the server orchestrate that analysis through an explicit state machine, but keeps the model as an untrusted planner: it cannot set permissions, approve, execute, bypass policy, or declare resolution. Phase 5 makes investigation independently auditable while preserving the same server-owned approval, controlled-action, verification, and resolution boundaries. Phase 7 makes the action boundary explicit and reviewable: an AI recommendation can become only a server-validated proposal, and a verified simulator outcome is required before resolution. Phase 10 packages the existing boundaries for presentation and submission: live provider verification is real when credentials are present, safe failure is explicit when they are absent, and the demo path is reproducible through the existing API routes.
 
 ## Why it matters
 
@@ -56,7 +56,7 @@ Phase 1 provides the contracts and runnable shell for that flow. Phase 2 provide
 
 The backend uses a repository port so domain services do not depend on a storage engine. Phase 1 includes a thread-safe in-memory reference adapter for local development and tests; the `DATABASE_URL` boundary is reserved for a PostgreSQL-compatible adapter without changing API or domain contracts.
 
-See [docs/architecture.md](docs/architecture.md) for module boundaries and extension points. See [docs/investigation.md](docs/investigation.md) for the Phase 5 workflow, contracts, evidence provenance, deterministic scoring, APIs, and safe handoff behavior. See [docs/actions.md](docs/actions.md) for the Phase 7 registry, lifecycle, safety controls, API, and payment-failure demonstration path. See [docs/verification.md](docs/verification.md) for the Phase 8 verification lifecycle, evidence trust, confidence factors, retry/recovery policy, resolution gate, API, UI, and tests.
+See [docs/architecture.md](docs/architecture.md) for module boundaries and extension points. See [docs/investigation.md](docs/investigation.md) for the Phase 5 workflow, contracts, evidence provenance, deterministic scoring, APIs, and safe handoff behavior. See [docs/actions.md](docs/actions.md) for the Phase 7 registry, lifecycle, safety controls, API, and payment-failure demonstration path. See [docs/verification.md](docs/verification.md) for the Phase 8 verification lifecycle, evidence trust, confidence factors, retry/recovery policy, resolution gate, API, UI, and tests. See [docs/demo-script.md](docs/demo-script.md) for the 2–3 minute presentation, [docs/hackathon-submission.md](docs/hackathon-submission.md) for the release checklist and verified-link placeholders, and [docs/release-verification.md](docs/release-verification.md) for the secret-free runtime record.
 
 ## Agent architecture
 
@@ -97,9 +97,11 @@ Frontend → NEXORA Backend → NEXORA AI Service → Nebius Token Factory → N
 
 `NebiusNemotronProvider` uses Nebius's OpenAI-compatible `/v1/chat/completions` HTTP contract through `httpx`. The model identifier is always supplied by `NEBIUS_MODEL`; no alternate vendor, local model, or hardcoded model output is used. Responses request JSON mode and are validated against `AIAnalysisResponse` before the service or frontend consumes them. Evidence references are grounded to the source evidence index and trusted source/summary fields are copied server-side; model output cannot introduce a new evidence record.
 
-The analysis service accepts either a persisted live incident or a read-only ShopFlow fixture. It labels simulator context as `synthetic_demo_data`, sends only the selected source evidence, and emits concise lifecycle events without private model reasoning. Tool calls are allow-listed proposals from the existing catalog; Phase 3 never executes them.
+The analysis service accepts either a persisted live incident or a read-only ShopFlow fixture. It labels simulator context as `synthetic_demo_data`, sends only the selected source evidence, and emits concise lifecycle events without private model reasoning. Tool calls are allow-listed proposals from the existing catalog; they are never executed by the provider or frontend. Each observable AI event identifies the provider, configured model, purpose, status, timestamp, and incident/global context without exposing hidden reasoning.
 
 Provider failures fail closed. Missing configuration, authentication failure, unavailable model/provider, timeout, rejected request, malformed JSON, and schema validation failure become typed safe errors. Retries are bounded by `NEBIUS_MAX_RETRIES` and only apply to transient transport/provider failures. `NEBIUS_API_KEY` remains a server-side `SecretStr` and is never placed in frontend code, API responses, activity metadata, or logs.
+
+Phase 10 verification uses `scripts/verify_nebius_runtime.py`, which calls the existing `POST /api/ai/test` route through the application’s `AIService` and `NebiusNemotronProvider`. It records the configured `NEBIUS_BASE_URL`, configured `NEBIUS_MODEL`, actual HTTP/status outcome, structured response validation, evidence grounding, registered tool/action validation, and safe failure state without printing the credential. A configured response is never simulated. When no valid runtime credential is available, the release record states: **Live provider verification not executed because no valid runtime credential was available in the environment.**
 
 ## Security model
 
@@ -132,21 +134,20 @@ The simulator contains structured services, deployments, configurations, metrics
 
 ## Current phase
 
-**Phase 9 — Security Hardening**
+**Phase 10 — Final hackathon integration and release readiness**
 
-Phase 9 stops here; Phase 10 is not started. The hardening deliverable includes:
+Phase 10 preserves the Phase 1–9 implementation and freezes the server-side boundaries for submission. It adds the final release documentation, reproducible provider/workflow checks, safe public-release audit, and only the Command Center clarity changes needed to make the lifecycle legible:
 
-- server-side reference authentication with unauthenticated/authenticated/authorized states and explicit `VIEWER`, `OPERATOR`, `APPROVER`, and `ADMIN` RBAC;
-- authorization and actor binding for privileged investigation, action, approval, execution, rollback, cancellation, verification, AI, configuration, and administrative operations;
-- tenant-bound incidents, evidence, investigations, actions, approvals, orchestrations, verifications, reports, AI activity, audit records, and security events with cross-tenant negative coverage;
-- prompt-injection framing/detection, evidence-index grounding, registered tool/action validation, resource and tenant binding, output/risk/approval validation, and no AI authority over execution or resolution;
-- request streaming limits, bounded inputs/resources/retries/timeouts, HTTPS/SSRF validation, restricted CORS, security headers, safe provider errors, rate limits, secret-safe logs, and forbidden-execution scanning;
-- append-only action-audit, verification-timeline, and security-event integrity chains with safe tamper responses and structured security events;
-- 157 backend tests, including 85 Phase 9 security-hardening cases, plus frontend regression/type/build checks and dependency/security scans.
+- real Nebius Token Factory / NVIDIA Nemotron verification through the existing `AIService` and `NebiusNemotronProvider` when valid runtime credentials are present;
+- explicit provider, configured base URL, configured model, response validation, evidence grounding, action/tool validation, timeout, and safe-failure records without secret output;
+- a reproducible ShopFlow `payment-failure` workflow covering evidence, impact, AI assistance, recommendation, human approval, controlled action, verification, resolution, and report;
+- preserved failure recovery for verification failure, rollback, bounded retry, and `REQUIRES_HUMAN` escalation;
+- observable AI lifecycle fields for provider, model, purpose, status, timestamp, and incident/context, with no private model reasoning;
+- completed [docs/demo-script.md](docs/demo-script.md) and [docs/hackathon-submission.md](docs/hackathon-submission.md), plus the low-cost deployment and server-side secret path above.
 
-All Phase 1–8 flows remain simulator-backed where applicable and preserve the `SIMULATED / CONTROLLED DEMONSTRATION` label. The in-memory repository, reference token hook, and local security-event store are explicit reference implementations that require production identity, durable storage, distributed rate limiting, and centralized audit infrastructure before deployment.
+All Phase 1–9 security and reliability controls remain server-owned. The in-memory repository, reference token hook, local rate limiter, and local security-event store are explicit reference implementations that require production identity, durable storage, distributed rate limiting, and centralized audit infrastructure before deployment. ShopFlow mutations remain **SIMULATED / CONTROLLED DEMONSTRATION**. NEXORA ONE is not presented as production-ready.
 
-## Roadmap through Phase 9
+## Roadmap through Phase 10
 
 | Phase | Scope | Status |
 | --- | --- | --- |
@@ -158,8 +159,8 @@ All Phase 1–8 flows remain simulator-backed where applicable and preserve the 
 | 6 | Enterprise Operations Layer | Complete |
 | 7 | Autonomous Action System | Complete |
 | 8 | Verification & Reliability Engine | Complete |
-| 9 | Security Hardening | Complete for this reference implementation |
-| 10 | Submission | Not started |
+| 9 | Security Hardening | Frozen and regression-tested for this reference implementation |
+| 10 | Final hackathon integration and release readiness | Complete for this reference implementation |
 
 ## Local development
 
@@ -212,6 +213,18 @@ Copy `.env.example` to `.env`. The important variables are:
 | `CORS_ORIGINS` | Comma-separated explicit browser origins; wildcard is rejected |
 
 Never commit `.env` or credentials.
+
+## Low-cost deployment path
+
+The reference deployment path is intentionally small:
+
+```text
+Frontend static host → NEXORA Backend service → Nebius Token Factory
+```
+
+Build the frontend as static assets and serve it from a static host or the same edge layer as the backend. Run one small NEXORA backend service with outbound HTTPS access to the configured Nebius endpoint. The backend owns the `NEBIUS_API_KEY`; it is injected through the backend runtime secret manager/environment and is never included in `VITE_*` variables, browser bundles, client requests, screenshots, logs, or reports. Set `NEBIUS_BASE_URL` and `NEBIUS_MODEL` from the target runtime, not from source code. Set `SECURITY_AUTH_SECRET` from a secret manager for staging/production and use explicit `CORS_ORIGINS` for the deployed frontend origin.
+
+This is a low-cost hackathon/reference path, not a production-readiness claim. The repository still uses reference authentication, in-memory persistence, local rate limiting, local audit storage, and controlled ShopFlow simulator actions. Replace those boundaries with production identity, durable storage, distributed controls, and real enterprise adapters before deployment for production use.
 
 ## API foundation
 

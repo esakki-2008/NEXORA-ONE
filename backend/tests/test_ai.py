@@ -253,7 +253,16 @@ def test_ai_routes_use_mocked_provider_and_expose_only_safe_events() -> None:
 
         activity = client.get("/api/ai/activity")
         assert activity.status_code == 200
-        assert any(event["event_type"] == "ai.response.validated" for event in activity.json())
+        events = activity.json()
+        assert any(event["event_type"] == "ai.response.validated" for event in events)
+        assert all(event["provider"] == "nebius" for event in events)
+        assert all(event["model"] == "nvidia/nemotron-test" for event in events)
+        assert all(
+            event["purpose"] in {"connectivity_test", "shopflow_simulator_analysis"}
+            for event in events
+        )
+        assert all(event["status"] for event in events)
+        assert all(event["context"] == "global" for event in events)
         assert "route-secret" not in activity.text
 
 

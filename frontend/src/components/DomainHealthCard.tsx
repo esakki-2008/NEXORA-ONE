@@ -14,7 +14,7 @@ export function DomainHealthCard({ incidents }: { incidents: Incident[] }) {
         const status = !domain.configured ? "not-configured" : isAttention ? "attention" : "no-issues";
         const statusLabel = !domain.configured ? "Not configured" : isAttention ? "Attention" : "No active issues";
         const summary = !domain.configured
-          ? "No connected source in Phase 2."
+          ? "No connected source in the reference adapter."
           : domainIncidents.length
             ? `${domainIncidents.length} incident record${domainIncidents.length === 1 ? "" : "s"} in live intake.`
             : "No active incident records in live intake.";

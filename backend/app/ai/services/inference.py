@@ -102,10 +102,20 @@ class AIService:
         incident_id: UUID | None = None,
         tenant_id: str = "reference-tenant",
         metadata: dict[str, str] | None = None,
+        purpose: str = "operations_analysis",
+        status: str | None = None,
     ) -> None:
+        """Record bounded, user-visible lifecycle telemetry without model reasoning."""
+
+        health = self.provider.health()
         event = AIActivityEvent(
             tenant_id=tenant_id,
             incident_id=incident_id,
+            provider=health.provider,
+            model=health.model,
+            purpose=purpose,
+            status=status or event_type.rsplit(".", maxsplit=1)[-1],
+            context=f"incident:{incident_id}" if incident_id is not None else "global",
             event_type=event_type,
             message=message,
             created_at=utc_now(),
@@ -122,11 +132,13 @@ class AIService:
             tenant_id=tenant_id,
             event_type="ai.test.accepted",
             message="AI connectivity test accepted",
+            purpose="connectivity_test",
         )
         self._record(
             tenant_id=tenant_id,
             event_type="ai.inference.started",
             message="Nemotron inference started",
+            purpose="connectivity_test",
         )
         request = self._request_for_context(
             source_label="connectivity_test",
@@ -139,6 +151,7 @@ class AIService:
                 tenant_id=tenant_id,
                 event_type="ai.inference.failed",
                 message=exc.public_message,
+                purpose="connectivity_test",
             )
             return AITestResponse(
                 success=False,
@@ -158,6 +171,7 @@ class AIService:
                 tenant_id=tenant_id,
                 event_type="ai.response.rejected",
                 message=exc.public_message,
+                purpose="connectivity_test",
             )
             return AITestResponse(
                 success=False,
@@ -169,11 +183,13 @@ class AIService:
             tenant_id=tenant_id,
             event_type="ai.response.received",
             message="Structured response received",
+            purpose="connectivity_test",
         )
         self._record(
             tenant_id=tenant_id,
             event_type="ai.response.validated",
             message="Response validation passed",
+            purpose="connectivity_test",
         )
         return AITestResponse(
             success=True,
@@ -205,6 +221,7 @@ class AIService:
             message="AI analysis request accepted",
             incident_id=incident_id,
             metadata={"source": source_label},
+            purpose=f"{source_label}_analysis",
         )
         self._record(
             tenant_id=tenant_id,
@@ -212,12 +229,14 @@ class AIService:
             message="Evidence normalized for Nemotron",
             incident_id=incident_id,
             metadata={"source": source_label},
+            purpose=f"{source_label}_analysis",
         )
         self._record(
             tenant_id=tenant_id,
             event_type="ai.inference.started",
             message="Nemotron inference started",
             incident_id=incident_id,
+            purpose=f"{source_label}_analysis",
         )
 
         try:
@@ -230,6 +249,7 @@ class AIService:
                 event_type="ai.inference.failed",
                 message=exc.public_message,
                 incident_id=incident_id,
+                purpose=f"{source_label}_analysis",
             )
             raise
 
@@ -244,12 +264,14 @@ class AIService:
             event_type="ai.response.received",
             message="Structured response received",
             incident_id=incident_id,
+            purpose=f"{source_label}_analysis",
         )
         self._record(
             tenant_id=tenant_id,
             event_type="ai.response.validated",
             message="Response validation passed",
             incident_id=incident_id,
+            purpose=f"{source_label}_analysis",
         )
         if response.recommended_action is not None:
             self._record(
@@ -257,6 +279,7 @@ class AIService:
                 event_type="ai.recommendation.generated",
                 message="Recommendation generated; approval boundary preserved",
                 incident_id=incident_id,
+                purpose=f"{source_label}_analysis",
             )
         return response
 

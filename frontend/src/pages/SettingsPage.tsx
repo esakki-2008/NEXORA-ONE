@@ -72,7 +72,7 @@ export function SettingsPage() {
           {testError ? <div className="inline-alert"><Icon name="incidents" size={15} /> {testError}</div> : null}
         </Panel>
         <Panel><SectionHeading eyebrow="SIMULATOR" title="ShopFlow" /><div className="settings-callout"><Icon name="layers" size={18} /><div><strong>Structured simulator ready</strong><p>{data.scenarios.length} scenario definitions are available through the read-only simulator API.</p></div></div><div className="settings-list"><div><span>Fixture source</span><StatusBadge value="ready" label="Ready" dot /></div><div><span>Mutates live incidents</span><strong>No</strong></div></div></Panel>
-        <Panel><SectionHeading eyebrow="SECURITY" title="Runtime posture" /><div className="security-list"><div><Icon name="check" size={15} /><span>Frontend contains no provider secrets</span></div><div><Icon name="check" size={15} /><span>Environment-based configuration</span></div><div><Icon name="check" size={15} /><span>Actions remain approval-gated by architecture</span></div><div><Icon name="check" size={15} /><span>Authentication is not enabled in Phase 2</span></div></div></Panel>
+        <Panel><SectionHeading eyebrow="SECURITY" title="Runtime posture" /><div className="security-list"><div><Icon name="check" size={15} /><span>Frontend contains no provider secrets</span></div><div><Icon name="check" size={15} /><span>Environment-based configuration</span></div><div><Icon name="check" size={15} /><span>Actions remain approval-gated by architecture</span></div><div><Icon name="check" size={15} /><span>Server-side reference authentication and RBAC enabled</span></div></div></Panel>
       </div>
     </section>
   );

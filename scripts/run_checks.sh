@@ -15,7 +15,9 @@ if [[ -x ".venv/bin/mypy" ]]; then
 fi
 
 "$PYTHON_BIN" -m pytest
-"$RUFF_BIN" check backend
+"$PYTHON_BIN" scripts/check_openapi.py
+"$PYTHON_BIN" scripts/run_shopflow_demo.py
+"$RUFF_BIN" check backend scripts
 "$MYPY_BIN" backend/app
 "$PYTHON_BIN" -m pip_audit
 "$PYTHON_BIN" -m bandit -q -r backend/app

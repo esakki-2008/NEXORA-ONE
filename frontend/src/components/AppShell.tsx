@@ -187,8 +187,8 @@ export function AppShell() {
           <div className="operator-row">
             <span className="operator-avatar">OP</span>
             <div className="operator-copy">
-              <strong>Local operator</strong>
-              <span className="muted">Authentication not enabled</span>
+              <strong>Authenticated operator</strong>
+              <span className="muted">Server-side reference session</span>
             </div>
           </div>
         </div>
@@ -222,9 +222,9 @@ export function AppShell() {
               <span className="topbar-muted">open</span>
             </div>
             <StatusBadge value={health?.environment ?? "pending"} label={health?.environment ?? "pending"} />
-            <div className="profile-chip" title="Authentication is not enabled in Phase 2">
+            <div className="profile-chip" title="Server-side reference authentication; production identity integration remains required">
               <span className="profile-avatar">OP</span>
-              <span className="profile-name">Local operator</span>
+              <span className="profile-name">Authenticated operator</span>
             </div>
             <button className="sidebar-toggle desktop-only" type="button" aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"} onClick={() => setCollapsed((value) => !value)}>
               <Icon name={collapsed ? "arrow" : "menu"} size={16} />
